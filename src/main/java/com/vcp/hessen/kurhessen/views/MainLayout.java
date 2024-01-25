@@ -23,7 +23,6 @@ import com.vcp.hessen.kurhessen.data.User;
 import com.vcp.hessen.kurhessen.security.AuthenticatedUser;
 import com.vcp.hessen.kurhessen.views.about.AboutView;
 import com.vcp.hessen.kurhessen.views.meinedaten.MeineDatenView;
-import com.vcp.hessen.kurhessen.views.meineveranstaltungen.MeineVeranstaltungenView;
 import com.vcp.hessen.kurhessen.views.mitglieder.MitgliederView;
 import com.vcp.hessen.kurhessen.views.veranstaltungen.VeranstaltungenView;
 import java.io.ByteArrayInputStream;
@@ -76,11 +75,7 @@ public class MainLayout extends AppLayout {
             nav.addItem(new SideNavItem("Meine Daten", MeineDatenView.class, LineAwesomeIcon.USER.create()));
 
         }
-        if (accessChecker.hasAccess(MeineVeranstaltungenView.class)) {
-            nav.addItem(new SideNavItem("Meine Veranstaltungen", MeineVeranstaltungenView.class,
-                    LineAwesomeIcon.TREE_SOLID.create()));
 
-        }
         if (accessChecker.hasAccess(MitgliederView.class)) {
             nav.addItem(new SideNavItem("Mitglieder", MitgliederView.class, LineAwesomeIcon.ADDRESS_CARD.create()));
 

@@ -4,10 +4,9 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.checkbox.CheckboxGroup;
-import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dependency.Uses;
+import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
@@ -22,15 +21,16 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import com.vcp.hessen.kurhessen.data.User;
-import com.vcp.hessen.kurhessen.services.UserService;
+import com.vcp.hessen.kurhessen.data.Role;
+import com.vcp.hessen.kurhessen.data.event.Event;
+import com.vcp.hessen.kurhessen.data.event.EventParticipant;
+import com.vcp.hessen.kurhessen.i18n.TranslatableText;
+import com.vcp.hessen.kurhessen.security.AuthenticatedUser;
+import com.vcp.hessen.kurhessen.services.EventService;
 import com.vcp.hessen.kurhessen.views.MainLayout;
 import jakarta.annotation.security.RolesAllowed;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Expression;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.*;
+
 import java.util.ArrayList;
 import java.util.List;
 import org.springframework.data.domain.PageRequest;
@@ -38,17 +38,17 @@ import org.springframework.data.jpa.domain.Specification;
 
 @PageTitle("Veranstaltungen")
 @Route(value = "admin/events", layout = MainLayout.class)
-@RolesAllowed("ADMIN")
+@RolesAllowed("USER")
 @Uses(Icon.class)
 public class VeranstaltungenView extends Div {
 
-    private Grid<User> grid;
+    private Grid<Event> grid;
 
     private Filters filters;
-    private final UserService userService;
+    private final EventService eventService;
 
-    public VeranstaltungenView(UserService userService) {
-        this.userService = userService;
+    public VeranstaltungenView(EventService eventService) {
+        this.eventService = eventService;
         setSizeFull();
         addClassNames("veranstaltungen-view");
 
@@ -84,41 +84,29 @@ public class VeranstaltungenView extends Div {
         return mobileFilters;
     }
 
-    public static class Filters extends Div implements Specification<User> {
-
-        private final TextField name = new TextField("Name");
-        private final TextField phone = new TextField("Phone");
-        private final DatePicker startDate = new DatePicker("Date of Birth");
+    public static class Filters extends Div implements Specification<Event> {
+        private final TextField name = new TextField(new TranslatableText("Name").translate());
+        private final TextField address = new TextField(new TranslatableText("Address").translate());
+        private final DatePicker startDate = new DatePicker(new TranslatableText("From").translate());
         private final DatePicker endDate = new DatePicker();
-        private final MultiSelectComboBox<String> occupations = new MultiSelectComboBox<>("Occupation");
-        private final CheckboxGroup<String> roles = new CheckboxGroup<>("Role");
 
         public Filters(Runnable onSearch) {
-
             setWidthFull();
             addClassName("filter-layout");
             addClassNames(LumoUtility.Padding.Horizontal.LARGE, LumoUtility.Padding.Vertical.MEDIUM,
                     LumoUtility.BoxSizing.BORDER);
-            name.setPlaceholder("First or last name");
-
-            occupations.setItems("Insurance Clerk", "Mortarman", "Beer Coil Cleaner", "Scale Attendant");
-
-            roles.setItems("Worker", "Supervisor", "Manager", "External");
-            roles.addClassName("double-width");
 
             // Action buttons
-            Button resetBtn = new Button("Reset");
+            Button resetBtn = new Button(new TranslatableText("Reset").translate());
             resetBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
             resetBtn.addClickListener(e -> {
                 name.clear();
-                phone.clear();
+                address.clear();
                 startDate.clear();
                 endDate.clear();
-                occupations.clear();
-                roles.clear();
                 onSearch.run();
             });
-            Button searchBtn = new Button("Search");
+            Button searchBtn = new Button(new TranslatableText("Search").translate());
             searchBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
             searchBtn.addClickListener(e -> onSearch.run());
 
@@ -126,13 +114,13 @@ public class VeranstaltungenView extends Div {
             actions.addClassName(LumoUtility.Gap.SMALL);
             actions.addClassName("actions");
 
-            add(name, phone, createDateRangeFilter(), occupations, roles, actions);
+            add(name, address, createDateRangeFilter(), actions);
         }
 
         private Component createDateRangeFilter() {
-            startDate.setPlaceholder("From");
+            startDate.setPlaceholder(new TranslatableText("From").translate());
 
-            endDate.setPlaceholder("To");
+            endDate.setPlaceholder(new TranslatableText("To").translate());
 
             // For screen readers
             startDate.setAriaLabel("From date");
@@ -146,7 +134,7 @@ public class VeranstaltungenView extends Div {
         }
 
         @Override
-        public Predicate toPredicate(Root<User> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
+        public Predicate toPredicate(Root<Event> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
             List<Predicate> predicates = new ArrayList<>();
 
             if (!name.isEmpty()) {
@@ -157,79 +145,57 @@ public class VeranstaltungenView extends Div {
                         lowerCaseFilter + "%");
                 predicates.add(criteriaBuilder.or(firstNameMatch, lastNameMatch));
             }
-            if (!phone.isEmpty()) {
-                String databaseColumn = "phone";
-                String ignore = "- ()";
+            if (!address.isEmpty()) {
+                String databaseColumn = "address";
 
-                String lowerCaseFilter = ignoreCharacters(ignore, phone.getValue().toLowerCase());
-                Predicate phoneMatch = criteriaBuilder.like(
-                        ignoreCharacters(ignore, criteriaBuilder, criteriaBuilder.lower(root.get(databaseColumn))),
-                        "%" + lowerCaseFilter + "%");
-                predicates.add(phoneMatch);
+                Predicate addressMatch = criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get(databaseColumn)),
+                        "%" + address.getValue().toLowerCase() + "%"
+                );
+                predicates.add(addressMatch);
 
             }
             if (startDate.getValue() != null) {
-                String databaseColumn = "dateOfBirth";
+                String databaseColumn = "starting_time";
                 predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get(databaseColumn),
                         criteriaBuilder.literal(startDate.getValue())));
             }
             if (endDate.getValue() != null) {
-                String databaseColumn = "dateOfBirth";
+                String databaseColumn = "ending_time";
                 predicates.add(criteriaBuilder.greaterThanOrEqualTo(criteriaBuilder.literal(endDate.getValue()),
                         root.get(databaseColumn)));
             }
-            if (!occupations.isEmpty()) {
-                String databaseColumn = "occupation";
-                List<Predicate> occupationPredicates = new ArrayList<>();
-                for (String occupation : occupations.getValue()) {
-                    occupationPredicates
-                            .add(criteriaBuilder.equal(criteriaBuilder.literal(occupation), root.get(databaseColumn)));
-                }
-                predicates.add(criteriaBuilder.or(occupationPredicates.toArray(Predicate[]::new)));
-            }
-            if (!roles.isEmpty()) {
-                String databaseColumn = "role";
-                List<Predicate> rolePredicates = new ArrayList<>();
-                for (String role : roles.getValue()) {
-                    rolePredicates.add(criteriaBuilder.equal(criteriaBuilder.literal(role), root.get(databaseColumn)));
-                }
-                predicates.add(criteriaBuilder.or(rolePredicates.toArray(Predicate[]::new)));
-            }
+
             return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
         }
-
-        private String ignoreCharacters(String characters, String in) {
-            String result = in;
-            for (int i = 0; i < characters.length(); i++) {
-                result = result.replace("" + characters.charAt(i), "");
-            }
-            return result;
-        }
-
-        private Expression<String> ignoreCharacters(String characters, CriteriaBuilder criteriaBuilder,
-                Expression<String> inExpression) {
-            Expression<String> expression = inExpression;
-            for (int i = 0; i < characters.length(); i++) {
-                expression = criteriaBuilder.function("replace", String.class, expression,
-                        criteriaBuilder.literal(characters.charAt(i)), criteriaBuilder.literal(""));
-            }
-            return expression;
-        }
-
     }
 
     private Component createGrid() {
-        grid = new Grid<>(User.class, false);
-        grid.addColumn("firstName").setAutoWidth(true);
-        grid.addColumn("lastName").setAutoWidth(true);
-        grid.addColumn("email").setAutoWidth(true);
-        grid.addColumn("phone").setAutoWidth(true);
-        grid.addColumn("dateOfBirth").setAutoWidth(true);
-        grid.addColumn("occupation").setAutoWidth(true);
-        grid.addColumn("role").setAutoWidth(true);
-        grid.addColumn("group").setAutoWidth(true);
+        grid = new Grid<>(Event.class, false);
+        grid.addColumn("name")
+                .setHeader(new TranslatableText("Name").translate())
+                .setAutoWidth(true);
+        grid.addColumn("address")
+                .setHeader(new TranslatableText("Address").translate())
+                .setAutoWidth(true);
+        grid.addColumn("startingTime")
+                .setHeader(new TranslatableText("From").translate())
+                .setAutoWidth(true);
+        grid.addColumn("endingTime")
+                .setHeader(new TranslatableText("To").translate())
+                .setAutoWidth(true);
+        grid.addColumn("participationDeadline")
+                .setHeader(new TranslatableText("DeadlineParticipation").translate())
+                .setAutoWidth(true);
+        grid.addColumn("participantCount")
+                .setHeader(new TranslatableText("ParticipantCount").translate())
+                .setAutoWidth(true);
+        grid.addColumn("price")
+                .setHeader(new TranslatableText("Price").translate())
+                .setTextAlign(ColumnTextAlign.END)
+                .setAutoWidth(true);
 
-        grid.setItems(query -> userService.list(
+        grid.setItems(query -> eventService.list(
                 PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query)),
                 filters).stream());
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);

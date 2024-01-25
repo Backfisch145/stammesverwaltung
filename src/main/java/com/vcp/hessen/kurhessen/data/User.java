@@ -26,9 +26,9 @@ public class User {
     private Long id;
     @Version
     private int version;
-    @Column(nullable = true)
+    @Column
     private Integer membershipId;
-    @Column(nullable = true)
+    @Column
     private String username;
     @Column(nullable = false)
     private String firstName;
