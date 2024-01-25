@@ -1,7 +1,6 @@
 package com.vcp.hessen.kurhessen.views.mitglieder;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.ItemLabelGenerator;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -18,8 +17,6 @@ import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.data.renderer.BasicRenderer;
-import com.vaadin.flow.data.renderer.Renderer;
 import com.vaadin.flow.function.ValueProvider;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -27,7 +24,6 @@ import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vcp.hessen.kurhessen.data.*;
 import com.vcp.hessen.kurhessen.i18n.TranslatableText;
-import com.vcp.hessen.kurhessen.i18n.TranslationProvider;
 import com.vcp.hessen.kurhessen.services.UserService;
 import com.vcp.hessen.kurhessen.views.MainLayout;
 import jakarta.annotation.security.RolesAllowed;
@@ -37,15 +33,12 @@ import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 
-import java.text.DateFormat;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import lombok.extern.slf4j.Slf4j;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
@@ -101,6 +94,7 @@ public class MitgliederView extends Div {
 
     public static class Filters extends Div implements Specification<User> {
 
+        private final TextField membershipId = new TextField(new TranslatableText("MembershipNumber").translate());
         private final TextField name = new TextField(new TranslatableText("Name").translate());
         private final TextField phone = new TextField(new TranslatableText("Phone").translate());
         private final DatePicker startDate = new DatePicker(new TranslatableText("Birthday").translate());
@@ -129,6 +123,7 @@ public class MitgliederView extends Div {
                 startDate.clear();
                 endDate.clear();
                 levels.clear();
+                membershipId.clear();
                 onSearch.run();
             });
             Button searchBtn = new Button(new TranslatableText("Search").translate());
@@ -139,7 +134,7 @@ public class MitgliederView extends Div {
             actions.addClassName(LumoUtility.Gap.SMALL);
             actions.addClassName("actions");
 
-            add(name, phone, createDateRangeFilter(), levels, actions);
+            add(name, phone, createDateRangeFilter(), membershipId, levels, actions);
         }
 
         @NotNull
@@ -163,6 +158,11 @@ public class MitgliederView extends Div {
         public Predicate toPredicate(Root<User> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
             List<Predicate> predicates = new ArrayList<>();
 
+            if (!membershipId.isEmpty()) {
+                String databaseColumn = "membership_id";
+                Predicate membershipMatch = criteriaBuilder.like(criteriaBuilder.lower(root.get(databaseColumn)), "%" + membershipId.getValue() + "%");
+                predicates.add(membershipMatch);
+            }
             if (!name.isEmpty()) {
                 String lowerCaseFilter = name.getValue().toLowerCase();
                 Predicate firstNameMatch = criteriaBuilder.like(criteriaBuilder.lower(root.get("firstName")),
@@ -201,6 +201,7 @@ public class MitgliederView extends Div {
                 }
                 predicates.add(criteriaBuilder.or(levelPredicates.toArray(Predicate[]::new)));
             }
+
             return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
         }
 
@@ -226,6 +227,9 @@ public class MitgliederView extends Div {
 
     private Component createGrid() {
         grid = new Grid<>(User.class, false);
+        grid.addColumn("membershipId")
+                .setHeader(new TranslatableText("MembershipNumberShort").translate())
+                .setAutoWidth(true);
         grid.addColumn("firstName")
                 .setHeader(new TranslatableText("FirstName").translate())
                 .setAutoWidth(true);

@@ -6,7 +6,6 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface IntolerancesRepository extends JpaRepository<Intolerance, Long>, JpaSpecificationExecutor<Intolerance> {
+public interface GroupRepository extends JpaRepository<Group, Long>, JpaSpecificationExecutor<Group> {
 
-    Intolerance findByName(String name);
 }

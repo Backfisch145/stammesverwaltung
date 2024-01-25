@@ -11,12 +11,11 @@ val log = KotlinLogging.logger("TranslatableText")
 open class TranslatableText(val id: String, vararg val params: Any) {
 
     companion object {
+        private val i18NProvider : TranslationProvider = TranslationProvider()
         fun getCurrentLocale() : Locale{
             return UI.getCurrent()?.locale ?: VaadinService.getCurrent().instantiator.i18NProvider.providedLocales?.firstOrNull() ?: Locale.getDefault()
         }
     }
-
-    private val i18NProvider : TranslationProvider = TranslationProvider()
 
     fun translate(): String {
         return i18NProvider.getTranslation(

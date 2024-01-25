@@ -5,9 +5,11 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import lombok.*;
 import org.hibernate.annotations.Fetch;
+import org.hibernate.proxy.HibernateProxy;
 
 import java.time.LocalDate;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 
 @Entity
@@ -24,13 +26,13 @@ public class User {
     private Long id;
     @Version
     private int version;
-    @Column
-    private int membershipId;
-    @Column
+    @Column(nullable = true)
+    private Integer membershipId;
+    @Column(nullable = true)
     private String username;
-    @Column
+    @Column(nullable = false)
     private String firstName;
-    @Column
+    @Column(nullable = false)
     private String lastName;
     @Column
     @Email
@@ -54,12 +56,10 @@ public class User {
     @Column(length = 1000000)
     private byte[] profilePicture;
 
-    @ManyToMany(fetch=FetchType.EAGER)
-    @JoinTable(
-            name = "users_intolerances",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "intolerances_name"))
-    private Set<Intolerance> intolerances = new LinkedHashSet<>();
+    private String intolerances;
+    private String eatingHabits;
+
+    private Boolean picturesAllowed;
 
     public String getDisplayName() {
        return firstName + " " + lastName;
@@ -78,6 +78,35 @@ public class User {
         this.gender = user.gender;
         this.roles = user.roles;
         this.profilePicture = user.profilePicture;
-        this.intolerances = user.intolerances;
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        Class<?> oEffectiveClass = o instanceof HibernateProxy ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass() : o.getClass();
+        Class<?> thisEffectiveClass = this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass() : this.getClass();
+        if (thisEffectiveClass != oEffectiveClass) return false;
+        User user = (User) o;
+        return getId() != null && Objects.equals(getId(), user.getId());
+    }
+
+    @Override
+    public final int hashCode() {
+        return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass().hashCode() : getClass().hashCode();
+    }
+
+    public String getIntolerances() {
+        if (intolerances == null) {
+            return "";
+        }
+        return intolerances;
+    }
+
+    public String getEatingHabits() {
+        if (eatingHabits == null) {
+            return "";
+        }
+        return eatingHabits;
     }
 }
