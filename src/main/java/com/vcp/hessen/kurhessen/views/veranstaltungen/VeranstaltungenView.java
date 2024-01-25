@@ -22,8 +22,8 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import com.vcp.hessen.kurhessen.data.SamplePerson;
-import com.vcp.hessen.kurhessen.services.SamplePersonService;
+import com.vcp.hessen.kurhessen.data.User;
+import com.vcp.hessen.kurhessen.services.UserService;
 import com.vcp.hessen.kurhessen.views.MainLayout;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -42,13 +42,13 @@ import org.springframework.data.jpa.domain.Specification;
 @Uses(Icon.class)
 public class VeranstaltungenView extends Div {
 
-    private Grid<SamplePerson> grid;
+    private Grid<User> grid;
 
     private Filters filters;
-    private final SamplePersonService samplePersonService;
+    private final UserService userService;
 
-    public VeranstaltungenView(SamplePersonService SamplePersonService) {
-        this.samplePersonService = SamplePersonService;
+    public VeranstaltungenView(UserService userService) {
+        this.userService = userService;
         setSizeFull();
         addClassNames("veranstaltungen-view");
 
@@ -84,7 +84,7 @@ public class VeranstaltungenView extends Div {
         return mobileFilters;
     }
 
-    public static class Filters extends Div implements Specification<SamplePerson> {
+    public static class Filters extends Div implements Specification<User> {
 
         private final TextField name = new TextField("Name");
         private final TextField phone = new TextField("Phone");
@@ -146,7 +146,7 @@ public class VeranstaltungenView extends Div {
         }
 
         @Override
-        public Predicate toPredicate(Root<SamplePerson> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
+        public Predicate toPredicate(Root<User> root, CriteriaQuery<?> query, CriteriaBuilder criteriaBuilder) {
             List<Predicate> predicates = new ArrayList<>();
 
             if (!name.isEmpty()) {
@@ -219,7 +219,7 @@ public class VeranstaltungenView extends Div {
     }
 
     private Component createGrid() {
-        grid = new Grid<>(SamplePerson.class, false);
+        grid = new Grid<>(User.class, false);
         grid.addColumn("firstName").setAutoWidth(true);
         grid.addColumn("lastName").setAutoWidth(true);
         grid.addColumn("email").setAutoWidth(true);
@@ -227,8 +227,9 @@ public class VeranstaltungenView extends Div {
         grid.addColumn("dateOfBirth").setAutoWidth(true);
         grid.addColumn("occupation").setAutoWidth(true);
         grid.addColumn("role").setAutoWidth(true);
+        grid.addColumn("group").setAutoWidth(true);
 
-        grid.setItems(query -> samplePersonService.list(
+        grid.setItems(query -> userService.list(
                 PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query)),
                 filters).stream());
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);

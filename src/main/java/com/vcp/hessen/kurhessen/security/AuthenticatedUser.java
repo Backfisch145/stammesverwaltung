@@ -3,6 +3,8 @@ package com.vcp.hessen.kurhessen.security;
 import com.vaadin.flow.spring.security.AuthenticationContext;
 import com.vcp.hessen.kurhessen.data.User;
 import com.vcp.hessen.kurhessen.data.UserRepository;
+
+import java.io.Serializable;
 import java.util.Optional;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;

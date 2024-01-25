@@ -9,7 +9,6 @@ import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dependency.Uses;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.H3;
-import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
@@ -21,10 +20,15 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
+import com.vcp.hessen.kurhessen.data.*;
+import com.vcp.hessen.kurhessen.i18n.TranslatableText;
+import com.vcp.hessen.kurhessen.security.AuthenticatedUser;
 import com.vcp.hessen.kurhessen.views.MainLayout;
 import jakarta.annotation.security.RolesAllowed;
-import java.util.ArrayList;
-import java.util.List;
+import org.jetbrains.annotations.NotNull;
+
+
+import java.util.Set;
 
 @PageTitle("Meine Daten")
 @Route(value = "me", layout = MainLayout.class)
@@ -33,22 +37,43 @@ import java.util.List;
 @Uses(Icon.class)
 public class MeineDatenView extends Composite<VerticalLayout> {
 
-    public MeineDatenView() {
-        Hr hr = new Hr();
+    private final AuthenticatedUser authenticatedUser;
+    private final IntolerancesRepository intolerancesRepository;
+    private final UserRepository userRepository;
+
+    private UserForm form;
+    record UserForm(
+            TextField firstName,
+            TextField lastName,
+            DatePicker birthday,
+            ComboBox<Gender> gender,
+            TextField phone,
+            EmailField email,
+            MultiSelectComboBox<Intolerance> intolerances
+    ) {
+
+    }
+
+    public MeineDatenView(AuthenticatedUser authenticatedUser, IntolerancesRepository intolerancesRepository, UserRepository userRepository) {
+        this.authenticatedUser = authenticatedUser;
+        this.intolerancesRepository = intolerancesRepository;
+        this.userRepository = userRepository;
+
+        form = new UserForm(
+                firstNameElement(),
+                lastNameElement(),
+                birthdayElement(),
+                genderElement(),
+                phoneElement(),
+                emailElement(),
+                intolerancesElement()
+        );
+
+
         VerticalLayout layoutColumn2 = new VerticalLayout();
         H3 h3 = new H3();
         FormLayout formLayout2Col = new FormLayout();
-        TextField textField = new TextField();
-        TextField textField2 = new TextField();
-        DatePicker datePicker = new DatePicker();
-        ComboBox comboBox = new ComboBox();
-        TextField textField3 = new TextField();
-        EmailField emailField = new EmailField();
-        MultiSelectComboBox multiSelectComboBox = new MultiSelectComboBox();
-        Hr hr2 = new Hr();
         HorizontalLayout layoutRow = new HorizontalLayout();
-        Button buttonPrimary = new Button();
-        Button buttonSecondary = new Button();
         HorizontalLayout layoutRow2 = new HorizontalLayout();
         getContent().setWidth("100%");
         getContent().getStyle().set("flex-grow", "1");
@@ -61,72 +86,136 @@ public class MeineDatenView extends Composite<VerticalLayout> {
         h3.setText("Personal Information");
         h3.setWidth("100%");
         formLayout2Col.setWidth("100%");
-        textField.setLabel("Vorname");
-        textField.setWidth("400px");
-        textField2.setLabel("Nachname");
-        textField2.setWidth("400px");
-        datePicker.setLabel("Geburtstag");
-        comboBox.setLabel("Geschlecht");
-        comboBox.setWidth("min-content");
-        setComboBoxSampleData(comboBox);
-        textField3.setLabel("Telefonnummer");
-        textField3.setWidth("min-content");
-        emailField.setLabel("Email");
-        emailField.setWidth("min-content");
-        multiSelectComboBox.setLabel("Unverträglichkeiten");
-        multiSelectComboBox.setWidth("100%");
-        setMultiSelectComboBoxSampleData(multiSelectComboBox);
+
         layoutRow.addClassName(Gap.MEDIUM);
         layoutRow.setWidth("100%");
         layoutRow.getStyle().set("flex-grow", "1");
-        buttonPrimary.setText("Save");
-        buttonPrimary.setWidth("min-content");
-        buttonPrimary.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        buttonSecondary.setText("Cancel");
-        buttonSecondary.setWidth("min-content");
         layoutRow2.setWidthFull();
         getContent().setFlexGrow(1.0, layoutRow2);
         layoutRow2.addClassName(Gap.MEDIUM);
         layoutRow2.setWidth("100%");
         layoutRow2.getStyle().set("flex-grow", "1");
-        getContent().add(hr);
         getContent().add(layoutColumn2);
         layoutColumn2.add(h3);
+        layoutColumn2.add(membershipIdElement());
         layoutColumn2.add(formLayout2Col);
-        formLayout2Col.add(textField);
-        formLayout2Col.add(textField2);
-        formLayout2Col.add(datePicker);
-        formLayout2Col.add(comboBox);
-        formLayout2Col.add(textField3);
-        formLayout2Col.add(emailField);
-        layoutColumn2.add(multiSelectComboBox);
-        layoutColumn2.add(hr2);
+        formLayout2Col.add(form.firstName);
+        formLayout2Col.add(form.lastName);
+        formLayout2Col.add(form.birthday);
+        formLayout2Col.add(form.gender);
+        formLayout2Col.add(form.phone);
+        formLayout2Col.add(form.email);
+        layoutColumn2.add(form.intolerances);
         layoutColumn2.add(layoutRow);
-        layoutRow.add(buttonPrimary);
-        layoutRow.add(buttonSecondary);
+        layoutRow.add(saveButton());
         getContent().add(layoutRow2);
     }
 
-    record SampleItem(String value, String label, Boolean disabled) {
+    @NotNull
+    private TextField membershipIdElement() {
+        TextField textField = new TextField();
+        textField.setLabel(new TranslatableText("MembershipNumber").translate());
+        textField.setWidth("400px");
+        textField.setReadOnly(true);
+        authenticatedUser.get().ifPresent(u -> textField.setValue("" + u.getMembershipId()));
+        return textField;
+    }
+    @NotNull
+    private TextField firstNameElement() {
+        TextField textField = new TextField();
+        textField.setLabel("Vorname");
+        textField.setWidth("400px");
+        authenticatedUser.get().ifPresent(u -> textField.setValue(u.getFirstName()));
+        return textField;
+    }
+    @NotNull
+    private TextField lastNameElement() {
+        TextField textField = new TextField();
+        textField.setLabel("Nachname");
+        textField.setWidth("400px");
+        authenticatedUser.get().ifPresent(u -> textField.setValue(u.getLastName()));
+        return textField;
+    }
+    @NotNull
+    private TextField phoneElement() {
+        TextField textField = new TextField();
+        textField.setLabel("Telefonnummer");
+        textField.setWidth("min-content");
+        authenticatedUser.get().ifPresent(u -> textField.setValue(u.getPhone()));
+        return textField;
+    }
+    @NotNull
+    private EmailField emailElement() {
+        EmailField emailField = new EmailField();
+        emailField.setLabel("Email");
+        emailField.setWidth("min-content");
+        authenticatedUser.get().ifPresent(u -> emailField.setValue(u.getEmail()));
+        return emailField;
+    }
+    @NotNull
+    private DatePicker birthdayElement() {
+        DatePicker datePicker = new DatePicker();
+        datePicker.setLabel("Geburtstag");
+        authenticatedUser.get().ifPresent(u -> datePicker.setValue(u.getDateOfBirth()));
+        return datePicker;
+    }
+    @NotNull
+    private ComboBox<Gender> genderElement() {
+        ComboBox<Gender> comboBox = new ComboBox<>();
+        comboBox.setLabel("Geschlecht");
+        comboBox.setWidth("min-content");
+        comboBox.setItems(Gender.values());
+        comboBox.setItemLabelGenerator(g -> new TranslatableText(g.name()).translate());
+        authenticatedUser.get().ifPresent(u -> comboBox.setValue(u.getGender()));
+        return comboBox;
+    }
+    @NotNull
+    private MultiSelectComboBox<Intolerance> intolerancesElement() {
+        MultiSelectComboBox<Intolerance> multiSelectComboBox = new MultiSelectComboBox<>();
+        multiSelectComboBox.setLabel("Unverträglichkeiten");
+        multiSelectComboBox.setWidth("100%");
+        multiSelectComboBox.setAutoExpand(MultiSelectComboBox.AutoExpandMode.VERTICAL);
+
+        multiSelectComboBox.setItems(intolerancesRepository.findAll());
+        multiSelectComboBox.setItemLabelGenerator(Intolerance::getName);
+
+        authenticatedUser.get().ifPresent(u -> {
+            Set<Intolerance> userIntolerances = u.getIntolerances();
+            if (!userIntolerances.isEmpty()) {
+                multiSelectComboBox.setValue(userIntolerances.stream().toList());
+            }
+        });
+
+        return multiSelectComboBox;
     }
 
-    private void setComboBoxSampleData(ComboBox comboBox) {
-        List<SampleItem> sampleItems = new ArrayList<>();
-        sampleItems.add(new SampleItem("first", "First", null));
-        sampleItems.add(new SampleItem("second", "Second", null));
-        sampleItems.add(new SampleItem("third", "Third", Boolean.TRUE));
-        sampleItems.add(new SampleItem("fourth", "Fourth", null));
-        comboBox.setItems(sampleItems);
-        comboBox.setItemLabelGenerator(item -> ((SampleItem) item).label());
+
+    @NotNull
+    private Button saveButton() {
+        Button buttonPrimary = new Button();
+        buttonPrimary.setText("Save");
+        buttonPrimary.setWidth("min-content");
+        buttonPrimary.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+
+        buttonPrimary.setDisableOnClick(true);
+        buttonPrimary.addClickListener(event -> {
+            authenticatedUser.get().ifPresent(u -> {
+                u.setFirstName(form.firstName.getValue());
+                u.setLastName(form.lastName.getValue());
+                u.setDateOfBirth(form.birthday.getValue());
+                u.setEmail(form.email.getValue());
+                u.setGender(form.gender.getValue());
+                u.setPhone(form.phone.getValue());
+                u.setIntolerances(form.intolerances.getValue());
+                userRepository.save(u);
+            });
+            buttonPrimary.setEnabled(true);
+        });
+
+        return buttonPrimary;
     }
 
-    private void setMultiSelectComboBoxSampleData(MultiSelectComboBox multiSelectComboBox) {
-        List<SampleItem> sampleItems = new ArrayList<>();
-        sampleItems.add(new SampleItem("first", "First", null));
-        sampleItems.add(new SampleItem("second", "Second", null));
-        sampleItems.add(new SampleItem("third", "Third", Boolean.TRUE));
-        sampleItems.add(new SampleItem("fourth", "Fourth", null));
-        multiSelectComboBox.setItems(sampleItems);
-        multiSelectComboBox.setItemLabelGenerator(item -> ((SampleItem) item).label());
-    }
+
+
+
 }

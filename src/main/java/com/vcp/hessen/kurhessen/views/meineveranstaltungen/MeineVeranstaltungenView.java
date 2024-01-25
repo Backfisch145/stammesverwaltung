@@ -20,8 +20,8 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
-import com.vcp.hessen.kurhessen.data.SampleAddress;
-import com.vcp.hessen.kurhessen.services.SampleAddressService;
+import com.vcp.hessen.kurhessen.data.Event;
+import com.vcp.hessen.kurhessen.services.EventService;
 import com.vcp.hessen.kurhessen.views.MainLayout;
 import jakarta.annotation.security.RolesAllowed;
 import java.util.Optional;
@@ -36,7 +36,7 @@ public class MeineVeranstaltungenView extends Div implements BeforeEnterObserver
     private final String SAMPLEADDRESS_ID = "sampleAddressID";
     private final String SAMPLEADDRESS_EDIT_ROUTE_TEMPLATE = "events/%s/edit";
 
-    private final Grid<SampleAddress> grid = new Grid<>(SampleAddress.class, false);
+    private final Grid<Event> grid = new Grid<>(Event.class, false);
 
     private TextField street;
     private TextField postalCode;
@@ -47,14 +47,14 @@ public class MeineVeranstaltungenView extends Div implements BeforeEnterObserver
     private final Button cancel = new Button("Cancel");
     private final Button save = new Button("Save");
 
-    private final BeanValidationBinder<SampleAddress> binder;
+    private final BeanValidationBinder<Event> binder;
 
-    private SampleAddress sampleAddress;
+    private Event sampleAddress;
 
-    private final SampleAddressService sampleAddressService;
+    private final EventService eventService;
 
-    public MeineVeranstaltungenView(SampleAddressService sampleAddressService) {
-        this.sampleAddressService = sampleAddressService;
+    public MeineVeranstaltungenView(EventService eventService) {
+        this.eventService = eventService;
         addClassNames("meine-veranstaltungen-view");
 
         // Create UI
@@ -71,7 +71,7 @@ public class MeineVeranstaltungenView extends Div implements BeforeEnterObserver
         grid.addColumn("city").setAutoWidth(true);
         grid.addColumn("state").setAutoWidth(true);
         grid.addColumn("country").setAutoWidth(true);
-        grid.setItems(query -> sampleAddressService.list(
+        grid.setItems(query -> eventService.list(
                 PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query)))
                 .stream());
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
@@ -87,7 +87,7 @@ public class MeineVeranstaltungenView extends Div implements BeforeEnterObserver
         });
 
         // Configure Form
-        binder = new BeanValidationBinder<>(SampleAddress.class);
+        binder = new BeanValidationBinder<>(Event.class);
 
         // Bind fields. This is where you'd define e.g. validation rules
 
@@ -101,10 +101,10 @@ public class MeineVeranstaltungenView extends Div implements BeforeEnterObserver
         save.addClickListener(e -> {
             try {
                 if (this.sampleAddress == null) {
-                    this.sampleAddress = new SampleAddress();
+                    this.sampleAddress = new Event();
                 }
                 binder.writeBean(this.sampleAddress);
-                sampleAddressService.update(this.sampleAddress);
+                eventService.update(this.sampleAddress);
                 clearForm();
                 refreshGrid();
                 Notification.show("Data updated");
@@ -124,7 +124,7 @@ public class MeineVeranstaltungenView extends Div implements BeforeEnterObserver
     public void beforeEnter(BeforeEnterEvent event) {
         Optional<Long> sampleAddressId = event.getRouteParameters().get(SAMPLEADDRESS_ID).map(Long::parseLong);
         if (sampleAddressId.isPresent()) {
-            Optional<SampleAddress> sampleAddressFromBackend = sampleAddressService.get(sampleAddressId.get());
+            Optional<Event> sampleAddressFromBackend = eventService.get(sampleAddressId.get());
             if (sampleAddressFromBackend.isPresent()) {
                 populateForm(sampleAddressFromBackend.get());
             } else {
@@ -186,7 +186,7 @@ public class MeineVeranstaltungenView extends Div implements BeforeEnterObserver
         populateForm(null);
     }
 
-    private void populateForm(SampleAddress value) {
+    private void populateForm(Event value) {
         this.sampleAddress = value;
         binder.readBean(this.sampleAddress);
 

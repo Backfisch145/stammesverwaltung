@@ -1,7 +1,7 @@
 package com.vcp.hessen.kurhessen.services;
 
-import com.vcp.hessen.kurhessen.data.SamplePerson;
-import com.vcp.hessen.kurhessen.data.SamplePersonRepository;
+import com.vcp.hessen.kurhessen.data.Event;
+import com.vcp.hessen.kurhessen.data.EventRepository;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,19 +9,19 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 @Service
-public class SamplePersonService {
+public class EventService {
 
-    private final SamplePersonRepository repository;
+    private final EventRepository repository;
 
-    public SamplePersonService(SamplePersonRepository repository) {
+    public EventService(EventRepository repository) {
         this.repository = repository;
     }
 
-    public Optional<SamplePerson> get(Long id) {
+    public Optional<Event> get(Long id) {
         return repository.findById(id);
     }
 
-    public SamplePerson update(SamplePerson entity) {
+    public Event update(Event entity) {
         return repository.save(entity);
     }
 
@@ -29,11 +29,11 @@ public class SamplePersonService {
         repository.deleteById(id);
     }
 
-    public Page<SamplePerson> list(Pageable pageable) {
+    public Page<Event> list(Pageable pageable) {
         return repository.findAll(pageable);
     }
 
-    public Page<SamplePerson> list(Pageable pageable, Specification<SamplePerson> filter) {
+    public Page<Event> list(Pageable pageable, Specification<Event> filter) {
         return repository.findAll(filter, pageable);
     }
 

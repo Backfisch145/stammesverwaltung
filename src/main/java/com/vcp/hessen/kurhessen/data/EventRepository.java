@@ -3,10 +3,12 @@ package com.vcp.hessen.kurhessen.data;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.stereotype.Repository;
 
-public interface SamplePersonRepository
+@Repository
+public interface EventRepository
         extends
-            JpaRepository<SamplePerson, Long>,
-            JpaSpecificationExecutor<SamplePerson> {
+            JpaRepository<Event, Long>,
+            JpaSpecificationExecutor<Event> {
 
 }

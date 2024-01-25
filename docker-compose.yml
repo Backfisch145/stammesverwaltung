@@ -1,0 +1,11 @@
+version: '3.1'
+
+services:
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: 'stammesverwaltung'
+      POSTGRES_PASSWORD: 'vaadinstart'
+      POSTGRES_USER: 'vaadinstart'
+    ports:
+      - 5432:5432

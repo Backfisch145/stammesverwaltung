@@ -1,22 +1,50 @@
 package com.vcp.hessen.kurhessen.data;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Lob;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import lombok.*;
+import org.hibernate.annotations.Fetch;
+
+import java.time.LocalDate;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 @Entity
-@Table(name = "application_user")
-public class User extends AbstractEntity {
+@Table(name = "users")
+@Getter
+@Setter
+@ToString
+@AllArgsConstructor
+@NoArgsConstructor
+public class User {
 
+    @Id
+    @GeneratedValue()
+    private Long id;
+    @Version
+    private int version;
+    @Column
+    private int membershipId;
+    @Column
     private String username;
-    private String name;
+    @Column
+    private String firstName;
+    @Column
+    private String lastName;
+    @Column
+    @Email
+    private String email;
+    @Column
+    private String phone;
+    @Column
+    private LocalDate dateOfBirth;
+    @Column
+    @Enumerated(EnumType.STRING)
+    private Level level;
+    @Column
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
     @JsonIgnore
     private String hashedPassword;
     @Enumerated(EnumType.STRING)
@@ -26,35 +54,30 @@ public class User extends AbstractEntity {
     @Column(length = 1000000)
     private byte[] profilePicture;
 
-    public String getUsername() {
-        return username;
-    }
-    public void setUsername(String username) {
-        this.username = username;
-    }
-    public String getName() {
-        return name;
-    }
-    public void setName(String name) {
-        this.name = name;
-    }
-    public String getHashedPassword() {
-        return hashedPassword;
-    }
-    public void setHashedPassword(String hashedPassword) {
-        this.hashedPassword = hashedPassword;
-    }
-    public Set<Role> getRoles() {
-        return roles;
-    }
-    public void setRoles(Set<Role> roles) {
-        this.roles = roles;
-    }
-    public byte[] getProfilePicture() {
-        return profilePicture;
-    }
-    public void setProfilePicture(byte[] profilePicture) {
-        this.profilePicture = profilePicture;
-    }
+    @ManyToMany(fetch=FetchType.EAGER)
+    @JoinTable(
+            name = "users_intolerances",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "intolerances_name"))
+    private Set<Intolerance> intolerances = new LinkedHashSet<>();
 
+    public String getDisplayName() {
+       return firstName + " " + lastName;
+   }
+
+    public User(User user) {
+        this.id = user.id;
+        this.version = user.version;
+        this.username = user.username;
+        this.firstName = user.firstName;
+        this.lastName = user.lastName;
+        this.email = user.email;
+        this.phone = user.phone;
+        this.dateOfBirth = user.dateOfBirth;
+        this.level = user.level;
+        this.gender = user.gender;
+        this.roles = user.roles;
+        this.profilePicture = user.profilePicture;
+        this.intolerances = user.intolerances;
+    }
 }
