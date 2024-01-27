@@ -21,11 +21,8 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import com.vcp.hessen.kurhessen.data.Role;
 import com.vcp.hessen.kurhessen.data.event.Event;
-import com.vcp.hessen.kurhessen.data.event.EventParticipant;
 import com.vcp.hessen.kurhessen.i18n.TranslatableText;
-import com.vcp.hessen.kurhessen.security.AuthenticatedUser;
 import com.vcp.hessen.kurhessen.services.EventService;
 import com.vcp.hessen.kurhessen.views.MainLayout;
 import jakarta.annotation.security.RolesAllowed;
@@ -37,17 +34,17 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
 
 @PageTitle("Veranstaltungen")
-@Route(value = "admin/events", layout = MainLayout.class)
+@Route(value = "events", layout = MainLayout.class)
 @RolesAllowed("USER")
 @Uses(Icon.class)
-public class VeranstaltungenView extends Div {
+public class EventView extends Div {
 
     private Grid<Event> grid;
 
     private Filters filters;
     private final EventService eventService;
 
-    public VeranstaltungenView(EventService eventService) {
+    public EventView(EventService eventService) {
         this.eventService = eventService;
         setSizeFull();
         addClassNames("veranstaltungen-view");

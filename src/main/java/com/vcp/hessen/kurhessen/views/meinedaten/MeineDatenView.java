@@ -17,6 +17,8 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
+import com.vaadin.flow.component.textfield.IntegerField;
+import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -24,6 +26,7 @@ import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
 import com.vcp.hessen.kurhessen.components.PictureAllowanceCheckBox;
 import com.vcp.hessen.kurhessen.data.*;
+import com.vcp.hessen.kurhessen.views.components.forms.UserForm;
 import com.vcp.hessen.kurhessen.i18n.TranslatableText;
 import com.vcp.hessen.kurhessen.security.AuthenticatedUser;
 import com.vcp.hessen.kurhessen.views.MainLayout;
@@ -41,65 +44,12 @@ public class MeineDatenView extends Composite<VerticalLayout> {
     private final UserRepository userRepository;
 
     private final UserForm form;
-    record UserForm(
-            TextField firstName,
-            TextField lastName,
-            DatePicker birthday,
-            ComboBox<Gender> gender,
-            TextField phone,
-            EmailField email,
-            TextField intolerances,
-            TextField eatingHabits,
-            PictureAllowanceCheckBox picturesAllowed
-    ) {
-        public boolean isValid() {
-            if (firstName.isInvalid()) {
-                return false;
-            }
-            if (lastName.isInvalid()) {
-                return false;
-            }
-            if (birthday.isInvalid()) {
-                return false;
-            }
-            if (gender.isInvalid()) {
-                return false;
-            }
-            if (phone.isInvalid()) {
-                return false;
-            }
-            if (email.isInvalid()) {
-                return false;
-            }
-            if (intolerances.isInvalid()) {
-                return false;
-            }
-            if (eatingHabits.isInvalid()) {
-                return false;
-            }
-            if (picturesAllowed.isInvalid()) {
-                return false;
-            }
-
-            return true;
-        }
-    }
 
     public MeineDatenView(AuthenticatedUser authenticatedUser, UserRepository userRepository) {
         this.authenticatedUser = authenticatedUser;
         this.userRepository = userRepository;
 
-        form = new UserForm(
-                firstNameElement(),
-                lastNameElement(),
-                birthdayElement(),
-                genderElement(),
-                phoneElement(),
-                emailElement(),
-                intolerancesElement(),
-                eatingHabitsElement(),
-                picturesAllowedElement()
-        );
+        form = new UserForm(authenticatedUser);
 
 
         VerticalLayout layoutColumn2 = new VerticalLayout();
@@ -129,111 +79,23 @@ public class MeineDatenView extends Composite<VerticalLayout> {
         layoutRow2.getStyle().set("flex-grow", "1");
         getContent().add(layoutColumn2);
         layoutColumn2.add(h3);
-        layoutColumn2.add(membershipIdElement());
+        layoutColumn2.add(form.getMemberId());
         layoutColumn2.add(formLayout2Col);
-        formLayout2Col.add(form.firstName);
-        formLayout2Col.add(form.lastName);
-        formLayout2Col.add(form.birthday);
-        formLayout2Col.add(form.gender);
-        formLayout2Col.add(form.phone);
-        formLayout2Col.add(form.email);
-        layoutColumn2.add(form.intolerances);
-        layoutColumn2.add(form.eatingHabits);
+        formLayout2Col.add(form.getFirstName());
+        formLayout2Col.add(form.getLastName());
+        formLayout2Col.add(form.getBirthday());
+        formLayout2Col.add(form.getGender());
+        formLayout2Col.add(form.getPhone());
+        formLayout2Col.add(form.getEmail());
+        layoutColumn2.add(form.getIntolerances());
+        layoutColumn2.add(form.getEatingHabits());
         layoutColumn2.add(new Hr());
-        layoutColumn2.add(form.picturesAllowed);
+        layoutColumn2.add(form.getPicturesAllowed());
         layoutColumn2.add(new Hr());
         layoutColumn2.add(layoutRow);
         layoutRow.add(saveButton());
         getContent().add(layoutRow2);
     }
-
-    @NotNull
-    private TextField membershipIdElement() {
-        TextField textField = new TextField();
-        textField.setLabel(new TranslatableText("MembershipNumber").translate());
-        textField.setWidth("400px");
-        textField.setReadOnly(true);
-        authenticatedUser.get().ifPresent(u -> textField.setValue("" + u.getMembershipId()));
-        return textField;
-    }
-    @NotNull
-    private TextField firstNameElement() {
-        TextField textField = new TextField();
-        textField.setLabel("Vorname");
-        textField.setWidth("400px");
-        textField.setMinLength(1);
-        authenticatedUser.get().ifPresent(u -> textField.setValue(u.getFirstName()));
-        return textField;
-    }
-    @NotNull
-    private TextField lastNameElement() {
-        TextField textField = new TextField();
-        textField.setLabel("Nachname");
-        textField.setWidth("400px");
-        textField.setMinLength(1);
-        authenticatedUser.get().ifPresent(u -> textField.setValue(u.getLastName()));
-        return textField;
-    }
-    @NotNull
-    private TextField phoneElement() {
-        TextField textField = new TextField();
-        textField.setLabel("Telefonnummer");
-        textField.setWidth("min-content");
-        authenticatedUser.get().ifPresent(u -> textField.setValue(u.getPhone()));
-        return textField;
-    }
-    @NotNull
-    private EmailField emailElement() {
-        EmailField emailField = new EmailField();
-        emailField.setLabel("Email");
-        emailField.setWidth("min-content");
-        authenticatedUser.get().ifPresent(u -> emailField.setValue(u.getEmail()));
-        return emailField;
-    }
-    @NotNull
-    private DatePicker birthdayElement() {
-        DatePicker datePicker = new DatePicker();
-        datePicker.setLabel("Geburtstag");
-        authenticatedUser.get().ifPresent(u -> datePicker.setValue(u.getDateOfBirth()));
-        return datePicker;
-    }
-    @NotNull
-    private ComboBox<Gender> genderElement() {
-        ComboBox<Gender> comboBox = new ComboBox<>();
-        comboBox.setLabel("Geschlecht");
-        comboBox.setWidth("min-content");
-        comboBox.setItems(Gender.getEntries());
-        comboBox.setItemLabelGenerator(g -> new TranslatableText(g.getLangKey()).translate());
-        authenticatedUser.get().ifPresent(u -> comboBox.setValue(u.getGender()));
-        return comboBox;
-    }
-    @NotNull
-    private TextField intolerancesElement() {
-        TextField textField = new TextField();
-        textField.setLabel(new TranslatableText("Intolerances").translate());
-        textField.setPlaceholder(new TranslatableText("IntolerancesPlaceholder").translate());
-        textField.setWidthFull();
-        authenticatedUser.get().ifPresent(u -> textField.setValue(u.getIntolerances()));
-        return textField;
-    }
-    @NotNull
-    private TextField eatingHabitsElement() {
-        TextField textField = new TextField();
-        textField.setLabel(new TranslatableText("EatingHabits").translate());
-        textField.setPlaceholder(new TranslatableText("EatingHabitsPlaceholder").translate());
-        textField.setWidthFull();
-        authenticatedUser.get().ifPresent(u -> textField.setValue(u.getEatingHabits()));
-        return textField;
-    }
-
-    @NotNull
-    private PictureAllowanceCheckBox picturesAllowedElement() {
-        PictureAllowanceCheckBox pictureAllowance = new PictureAllowanceCheckBox();
-
-        authenticatedUser.get().ifPresent(u -> pictureAllowance.setValue(u.getPicturesAllowed()));
-        return pictureAllowance;
-    }
-
 
     @NotNull
     private Button saveButton() {
@@ -253,17 +115,17 @@ public class MeineDatenView extends Composite<VerticalLayout> {
                     return;
                 }
 
-
-
-                u.setFirstName(form.firstName.getValue());
-                u.setLastName(form.lastName.getValue());
-                u.setDateOfBirth(form.birthday.getValue());
-                u.setEmail(form.email.getValue());
-                u.setGender(form.gender.getValue());
-                u.setPhone(form.phone.getValue());
-                u.setIntolerances(form.intolerances.getValue());
-                u.setEatingHabits(form.eatingHabits.getValue());
-                u.setPicturesAllowed(form.picturesAllowed.getValue());
+                u.setFirstName(form.getFirstName().getValue());
+                u.setLastName(form.getLastName().getValue());
+                u.setDateOfBirth(form.getBirthday().getValue());
+                u.setEmail(form.getEmail().getValue());
+                u.setGender(form.getGender().getValue());
+                u.setPhone(form.getPhone().getValue());
+                u.setIntolerances(form.getIntolerances().getValue());
+                u.setEatingHabits(form.getEatingHabits().getValue());
+                if (form.getPicturesAllowed() != null) {
+                    u.setPicturesAllowed(form.getPicturesAllowed().getValue());
+                }
                 userRepository.save(u);
                 Notification
                         .show(new TranslatableText("UserUpdated").translate())

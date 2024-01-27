@@ -4,12 +4,7 @@ import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.contextmenu.MenuItem;
-import com.vaadin.flow.component.html.Anchor;
-import com.vaadin.flow.component.html.Div;
-import com.vaadin.flow.component.html.Footer;
-import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.html.H2;
-import com.vaadin.flow.component.html.Header;
+import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.menubar.MenuBar;
 import com.vaadin.flow.component.orderedlayout.Scroller;
@@ -24,7 +19,7 @@ import com.vcp.hessen.kurhessen.security.AuthenticatedUser;
 import com.vcp.hessen.kurhessen.views.about.AboutView;
 import com.vcp.hessen.kurhessen.views.meinedaten.MeineDatenView;
 import com.vcp.hessen.kurhessen.views.mitglieder.MitgliederView;
-import com.vcp.hessen.kurhessen.views.veranstaltungen.VeranstaltungenView;
+import com.vcp.hessen.kurhessen.views.veranstaltungen.EventView;
 import java.io.ByteArrayInputStream;
 import java.util.Optional;
 import org.vaadin.lineawesome.LineAwesomeIcon;
@@ -80,9 +75,9 @@ public class MainLayout extends AppLayout {
             nav.addItem(new SideNavItem("Mitglieder", MitgliederView.class, LineAwesomeIcon.ADDRESS_CARD.create()));
 
         }
-        if (accessChecker.hasAccess(VeranstaltungenView.class)) {
+        if (accessChecker.hasAccess(EventView.class)) {
             nav.addItem(
-                    new SideNavItem("Veranstaltungen", VeranstaltungenView.class, LineAwesomeIcon.TREE_SOLID.create()));
+                    new SideNavItem("Veranstaltungen", EventView.class, LineAwesomeIcon.TREE_SOLID.create()));
 
         }
         if (accessChecker.hasAccess(AboutView.class)) {

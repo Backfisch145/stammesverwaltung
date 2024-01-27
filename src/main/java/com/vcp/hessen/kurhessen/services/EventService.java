@@ -31,7 +31,7 @@ public class EventService {
         this.repository = repository;
     }
 
-    public Optional<Event> get(Long id) {
+    public Optional<Event> get(Integer id) {
         return repository.findById(id);
     }
 
@@ -39,7 +39,7 @@ public class EventService {
         return repository.save(entity);
     }
 
-    public void delete(Long id) {
+    public void delete(Integer id) {
         repository.deleteById(id);
     }
 

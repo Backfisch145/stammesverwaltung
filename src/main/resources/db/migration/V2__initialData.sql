@@ -48,11 +48,5 @@ insert into users (version, id, membership_id, username, first_name,last_name,em
 
 insert into user_roles (user_id, roles) values ('33', 'USER');
 insert into user_roles (user_id, roles) values ('34', 'USER');
+insert into user_roles (user_id, roles) values ('34', 'MODERATOR');
 insert into user_roles (user_id, roles) values ('34', 'ADMIN');
-
-
-insert into intolerances(name) values ('LACTOSE');
-insert into intolerances(name) values ('FRUCTOSE');
-insert into intolerances(name) values ('GLUTEN');
-insert into intolerances(name) values ('CAFFEINE');
-insert into intolerances(name) values ('WEIZEN');

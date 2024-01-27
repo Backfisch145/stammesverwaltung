@@ -18,49 +18,17 @@ create sequence users_seq
 
 alter sequence users_seq owner to postgres;
 
-
-create table intolerances
-(
-    name varchar(255) not null
-        primary key
-);
-
-alter table intolerances
-    owner to postgres;
-
-create table users_intolerances
-(
-    user_id           bigint       not null,
-    intolerances_name varchar(255) not null
-        constraint fk3n1ptlrmr4tv6l1cb6y543f1l
-            references intolerances,
-    primary key (user_id, intolerances_name)
-);
-
-alter table users_intolerances
-    owner to postgres;
-
-create table events_users
-(
-    event_id bigint not null,
-    users_id bigint not null,
-    primary key (event_id, users_id)
-);
-
-alter table events_users
-    owner to postgres;
-
 create table events
 (
-    price                  real    not null,
-    version                integer not null,
-    ending_time            timestamp(6),
-    id                     bigint  not null
+    id                     integer not null
         primary key,
-    participation_deadline timestamp(6),
-    starting_time          timestamp(6),
     address                varchar(255),
-    name                   varchar(255)
+    ending_time            timestamp(6),
+    name                   varchar(255),
+    participation_deadline timestamp(6),
+    price                  double precision,
+    starting_time          timestamp(6),
+    version                integer not null
 );
 
 alter table events
@@ -68,10 +36,10 @@ alter table events
 
 create table groups
 (
-    version integer not null,
     id      bigint  not null
         primary key,
-    name    varchar(255)
+    name    varchar(255),
+    version integer not null
 );
 
 alter table groups
@@ -79,12 +47,9 @@ alter table groups
 
 create table users
 (
-    date_of_birth    date,
-    membership_id    integer,
-    pictures_allowed boolean,
-    version          integer      not null,
     id               bigint       not null
         primary key,
+    date_of_birth    date,
     eating_habits    varchar(255),
     email            varchar(255),
     first_name       varchar(255) not null,
@@ -99,9 +64,12 @@ create table users
         constraint users_level_check
             check ((level)::text = ANY
                    ((ARRAY ['WOELFLING'::character varying, 'JUNGPFADFINDER'::character varying, 'PFADFINDER'::character varying, 'ROVER'::character varying, 'ERWACHSEN'::character varying])::text[])),
+    membership_id    integer,
     phone            varchar(255),
+    pictures_allowed boolean,
+    profile_picture  oid,
     username         varchar(255),
-    profile_picture  oid
+    version          integer      not null
 );
 
 alter table users
@@ -109,16 +77,8 @@ alter table users
 
 create table event_participants
 (
-    version    integer not null,
-    event_id   bigint
-        constraint fk2x391urx4up03f4jp2y9mdt5x
-            references events,
     id         bigint  not null
         primary key,
-    user_id    bigint
-        unique
-        constraint fkre6m0d4mgt4351tytlkac9jvf
-            references users,
     event_role varchar(255)
         constraint event_participants_event_role_check
             check ((event_role)::text = ANY
@@ -126,7 +86,16 @@ create table event_participants
     status     varchar(255)
         constraint event_participants_status_check
             check ((status)::text = ANY
-                   ((ARRAY ['INVITED'::character varying, 'DECLINED'::character varying, 'IN_PAYMENT'::character varying, 'IN_REPAYMENT'::character varying, 'REGISTERED'::character varying])::text[]))
+                   ((ARRAY ['INVITED'::character varying, 'DECLINED'::character varying, 'IN_PAYMENT'::character varying, 'IN_REPAYMENT'::character varying, 'REGISTERED'::character varying])::text[])),
+    version    integer not null,
+    event_id   integer
+        constraint fk2x391urx4up03f4jp2y9mdt5x
+            references events,
+    user_id    bigint
+        constraint uk_dilgs22qiib3pm7226q2exo6p
+            unique
+        constraint fkre6m0d4mgt4351tytlkac9jvf
+            references users
 );
 
 alter table event_participants
@@ -139,7 +108,8 @@ create table user_roles
             references users,
     roles   varchar(255)
         constraint user_roles_roles_check
-            check ((roles)::text = ANY ((ARRAY ['USER'::character varying, 'ADMIN'::character varying])::text[]))
+            check ((roles)::text = ANY
+                   ((ARRAY ['USER'::character varying, 'MODERATOR'::character varying, 'ADMIN'::character varying])::text[]))
 );
 
 alter table user_roles
