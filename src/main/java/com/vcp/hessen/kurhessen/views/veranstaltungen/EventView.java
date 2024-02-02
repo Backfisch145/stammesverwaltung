@@ -17,10 +17,12 @@ import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.function.ValueProvider;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import com.vcp.hessen.kurhessen.data.User;
 import com.vcp.hessen.kurhessen.data.event.Event;
 import com.vcp.hessen.kurhessen.i18n.TranslatableText;
 import com.vcp.hessen.kurhessen.services.EventService;
@@ -28,8 +30,13 @@ import com.vcp.hessen.kurhessen.views.MainLayout;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.persistence.criteria.*;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
 
@@ -136,11 +143,9 @@ public class EventView extends Div {
 
             if (!name.isEmpty()) {
                 String lowerCaseFilter = name.getValue().toLowerCase();
-                Predicate firstNameMatch = criteriaBuilder.like(criteriaBuilder.lower(root.get("firstName")),
-                        lowerCaseFilter + "%");
-                Predicate lastNameMatch = criteriaBuilder.like(criteriaBuilder.lower(root.get("lastName")),
-                        lowerCaseFilter + "%");
-                predicates.add(criteriaBuilder.or(firstNameMatch, lastNameMatch));
+                Predicate firstNameMatch = criteriaBuilder.like(criteriaBuilder.lower(root.get("name")),
+                        "%" + lowerCaseFilter + "%");
+                predicates.add(firstNameMatch);
             }
             if (!address.isEmpty()) {
                 String databaseColumn = "address";
@@ -153,14 +158,14 @@ public class EventView extends Div {
 
             }
             if (startDate.getValue() != null) {
-                String databaseColumn = "starting_time";
+                String databaseColumn = "startingTime";
                 predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get(databaseColumn),
                         criteriaBuilder.literal(startDate.getValue())));
             }
             if (endDate.getValue() != null) {
-                String databaseColumn = "ending_time";
-                predicates.add(criteriaBuilder.greaterThanOrEqualTo(criteriaBuilder.literal(endDate.getValue()),
-                        root.get(databaseColumn)));
+                String databaseColumn = "endingTime";
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get(databaseColumn),
+                        criteriaBuilder.literal(endDate.getValue())));
             }
 
             return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
@@ -175,19 +180,22 @@ public class EventView extends Div {
         grid.addColumn("address")
                 .setHeader(new TranslatableText("Address").translate())
                 .setAutoWidth(true);
-        grid.addColumn("startingTime")
+        grid.addColumn(startingTimeRenderer(), "startingTime")
                 .setHeader(new TranslatableText("From").translate())
                 .setAutoWidth(true);
-        grid.addColumn("endingTime")
+        grid.addColumn(endingTimeRenderer(), "endingTime")
                 .setHeader(new TranslatableText("To").translate())
                 .setAutoWidth(true);
-        grid.addColumn("participationDeadline")
+        grid.addColumn(participationDeadlineRenderer(), "participationDeadline")
                 .setHeader(new TranslatableText("DeadlineParticipation").translate())
+                .setAutoWidth(true);
+        grid.addColumn(paymentDeadlineRenderer(), "paymentDeadline")
+                .setHeader(new TranslatableText("DeadlinePayment").translate())
                 .setAutoWidth(true);
         grid.addColumn("participantCount")
                 .setHeader(new TranslatableText("ParticipantCount").translate())
                 .setAutoWidth(true);
-        grid.addColumn("price")
+        grid.addColumn(priceRenderer(), "price")
                 .setHeader(new TranslatableText("Price").translate())
                 .setTextAlign(ColumnTextAlign.END)
                 .setAutoWidth(true);
@@ -199,6 +207,56 @@ public class EventView extends Div {
         grid.addClassNames(LumoUtility.Border.TOP, LumoUtility.BorderColor.CONTRAST_10);
 
         return grid;
+    }
+
+    @NotNull
+    private static ValueProvider<Event, String> startingTimeRenderer() {
+        return event -> {
+            LocalDateTime ldt = event.getStartingTime();
+            if (ldt != null) {
+                DateTimeFormatter usDateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(TranslatableText.Companion.getCurrentLocale());
+                return ldt.format(usDateFormatter);
+            } else {
+                return "";
+            }
+        };
+    }
+    @NotNull
+    private static ValueProvider<Event, String> endingTimeRenderer() {
+        return event -> {
+            LocalDateTime ldt = event.getEndingTime();
+            if (ldt != null) {
+                DateTimeFormatter usDateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(TranslatableText.Companion.getCurrentLocale());
+                return ldt.format(usDateFormatter);
+            } else {
+                return "";
+            }
+        };
+    }
+    private static ValueProvider<Event, String> participationDeadlineRenderer() {
+        return event -> {
+            LocalDateTime ldt = event.getParticipationDeadline();
+            if (ldt != null) {
+                DateTimeFormatter usDateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(TranslatableText.Companion.getCurrentLocale());
+                return ldt.format(usDateFormatter);
+            } else {
+                return "";
+            }
+        };
+    }
+    private static ValueProvider<Event, String> paymentDeadlineRenderer() {
+        return event -> {
+            LocalDateTime ldt = event.getPaymentDeadline();
+            if (ldt != null) {
+                DateTimeFormatter usDateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(TranslatableText.Companion.getCurrentLocale());
+                return ldt.format(usDateFormatter);
+            } else {
+                return "";
+            }
+        };
+    }
+    private static ValueProvider<Event, String> priceRenderer() {
+        return event -> event.getPrice() + " €";
     }
 
     private void refreshGrid() {

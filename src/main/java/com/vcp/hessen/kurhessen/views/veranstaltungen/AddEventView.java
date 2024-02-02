@@ -8,10 +8,7 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.router.BeforeEnterEvent;
-import com.vaadin.flow.router.BeforeEnterObserver;
-import com.vaadin.flow.router.PageTitle;
-import com.vaadin.flow.router.Route;
+import com.vaadin.flow.router.*;
 import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
 import com.vcp.hessen.kurhessen.data.Role;
 import com.vcp.hessen.kurhessen.data.User;
@@ -99,39 +96,55 @@ public class AddEventView extends Composite<VerticalLayout> implements BeforeEnt
 
     @Override
     public void beforeEnter(@NotNull BeforeEnterEvent beforeEvent) {
-        Optional<Integer> eventId = beforeEvent.getRouteParameters().get(EVENT_ID).map(Integer::parseInt);
+
+        Optional<String> eventIdStr = beforeEvent.getRouteParameters().get(EVENT_ID);
+
+        if (eventIdStr.isEmpty()) {
+            return;
+        }
+
         User user = authenticatedUser.get().orElseThrow(() -> new HttpClientErrorException(HttpStatus.UNAUTHORIZED));
 
-        Optional<Event> event = Optional.empty();
-        Action action = Action.SHOW;
-
-        if (eventId.isPresent()) {
-            event = eventRepository.findById(eventId.get());
-
-            if (event.isPresent()) {
-                if (!user.hasRole(Role.ADMIN) && !event.get().isUserParticipant(user)) {
-                    throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED);
-                }
+        if ("new".equals(eventIdStr.get())) {
+            if (!user.hasRole(Role.MODERATOR)) {
+                throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED);
             }
+            form.init(new Event());
+            return;
+        }
 
-            Optional<Action> optionalAction = beforeEvent.getRouteParameters().get(ACTION_ID).map(Action::valueOfIgnoreCase);
-            if (optionalAction.isPresent()) {
-                if (user.hasRole(Role.ADMIN)) {
-                    action = optionalAction.get();
-                } else {
-                    if (event.isPresent()) {
-                        EventParticipant userParticipant = event.get().getEventParticipation(user);
-                        if (userParticipant != null && EventRole.ORGANISER == userParticipant.getEventRole()) {
-                            action = optionalAction.get();
-                        }
+        int eventId;
+        try {
+            eventId = Integer.parseInt(eventIdStr.get());
+        } catch (Exception e){
+            throw new HttpClientErrorException(HttpStatus.BAD_REQUEST);
+        }
+
+        Action action = Action.SHOW;
+        Optional<Event> event = eventRepository.findById(eventId);
+
+        if (event.isPresent() && (!user.hasRole(Role.ADMIN) && !event.get().isUserParticipant(user))) {
+                throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED);
+        }
+
+        Optional<Action> optionalAction = beforeEvent.getRouteParameters().get(ACTION_ID).map(Action::valueOfIgnoreCase);
+        if (optionalAction.isPresent()) {
+            if (user.hasRole(Role.ADMIN)) {
+                action = optionalAction.get();
+            } else {
+                if (event.isPresent()) {
+                    EventParticipant userParticipant = event.get().getEventParticipation(user);
+                    if (userParticipant != null && EventRole.ORGANISER == userParticipant.getEventRole()) {
+                        action = optionalAction.get();
                     }
                 }
             }
-
-            if (Action.SHOW == action) {
-                form.setReadOnly(true);
-            }
         }
+
+        if (Action.SHOW == action) {
+            form.setReadOnly(true);
+        }
+
         form.init(event.orElseGet(Event::new));
     }
 

@@ -19,8 +19,6 @@ import com.vcp.hessen.kurhessen.i18n.TranslatableText;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.LinkedHashSet;
-import java.util.Set;
 
 import com.vcp.hessen.kurhessen.views.components.DatePickerLocalised;
 import jakarta.annotation.security.RolesAllowed;
@@ -45,6 +43,7 @@ public final class EventForm extends FormLayout {
     private final DatePicker endingTime;
     @NotNull
     private final DatePicker participationDeadline;
+    private final DatePicker paymentDeadline;
     @NotNull
     private final NumberField price;
     @NotNull
@@ -65,6 +64,7 @@ public final class EventForm extends FormLayout {
         endingTime = this.endingTimeElement();
         address = this.addressElement();
         participationDeadline = this.participationDeadlineElement();
+        paymentDeadline = this.paymentDeadlineElement();
         price = this.priceElement();
         organisers = this.organisersElement();
         participants = this.participantsElement();
@@ -78,9 +78,10 @@ public final class EventForm extends FormLayout {
         this.add(this.name);
         this.add(this.startingTime);
         this.add(this.endingTime);
-        this.add(this.address, 2);
-        this.add(new Hr(), 2);
+        this.add(this.address);
         this.add(this.participationDeadline);
+        this.add(new Hr(), 2);
+        this.add(this.paymentDeadline);
         this.add(this.price);
         this.add(new Hr(), 2);
         this.add(this.organisers);
@@ -106,32 +107,50 @@ public final class EventForm extends FormLayout {
         if (event.getParticipationDeadline() != null) {
             this.participationDeadline.setValue(event.getParticipationDeadline().toLocalDate());
         }
+        if (event.getPaymentDeadline() != null) {
+            this.paymentDeadline.setValue(event.getPaymentDeadline().toLocalDate());
+        }
 
         event.getParticipants().forEach(participant -> {
-            if (participant.getEventRole() == EventRole.ORGANISER) {
-                this.organisers.getValue().add(participant.getUser());
-            } else {
-                this.participants.getValue().add(participant.getUser());
+            if (participant.getUser() != null) {
+                if (participant.getEventRole() == EventRole.ORGANISER) {
+                    this.organisers.getValue().add(participant.getUser());
+                } else {
+                    this.participants.getValue().add(participant.getUser());
+                }
             }
+
         });
 
     }
     @NotNull
-    public final Event toEvent() {
+    public Event toEvent() {
         Event event = new Event();
         this.applyForm(event);
         return event;
     }
 
-    public final void applyForm(@NotNull Event event) {
+    public void applyForm(@NotNull Event event) {
         Intrinsics.checkNotNullParameter(event, "event");
         event.setId(this.eventId.getValue());
         event.setName(this.name.getValue());
-        event.setStartingTime(LocalDateTime.of(this.startingTime.getValue(), LocalTime.MIN));
-        event.setEndingTime(LocalDateTime.of(this.endingTime.getValue(), LocalTime.MIN));
-        event.setParticipationDeadline(LocalDateTime.of(this.participationDeadline.getValue(), LocalTime.MIN));
+
+        if (this.startingTime.getValue() != null) {
+            event.setStartingTime(LocalDateTime.of(this.startingTime.getValue(), LocalTime.MIN));
+        }
+        if (this.endingTime.getValue() != null) {
+            event.setEndingTime(LocalDateTime.of(this.endingTime.getValue(), LocalTime.MAX));
+        }
+        if (this.participationDeadline.getValue() != null) {
+            event.setParticipationDeadline(LocalDateTime.of(this.participationDeadline.getValue(), LocalTime.MIN));
+        }
+        if (this.paymentDeadline.getValue() != null) {
+            event.setPaymentDeadline(LocalDateTime.of(this.paymentDeadline.getValue(), LocalTime.MIN));
+        }
+
         event.setPrice(this.price.getValue());
         event.setAddress(this.address.getValue());
+
 
 
         this.participants.getValue().forEach(it ->
@@ -158,7 +177,7 @@ public final class EventForm extends FormLayout {
 
     }
 
-    public final boolean isValid() {
+    public boolean isValid() {
         if (this.eventId.isInvalid()) {
             return false;
         } else if (this.name.isInvalid()) {
@@ -171,6 +190,8 @@ public final class EventForm extends FormLayout {
             return false;
         } else if (this.participationDeadline.isInvalid()) {
             return false;
+        } else if (this.paymentDeadline.isInvalid()) {
+            return false;
         } else if (this.price.isInvalid()) {
             return false;
         } else if (this.organisers.isInvalid()) {
@@ -180,13 +201,14 @@ public final class EventForm extends FormLayout {
         }
     }
 
-    public final void setReadOnly(boolean readOnly) {
+    public void setReadOnly(boolean readOnly) {
         eventId.setReadOnly(readOnly);
         name.setReadOnly(readOnly);
         startingTime.setReadOnly(readOnly);
         endingTime.setReadOnly(readOnly);
         address.setReadOnly(readOnly);
         participationDeadline.setReadOnly(readOnly);
+        paymentDeadline.setReadOnly(readOnly);
         price.setReadOnly(readOnly);
         organisers.setReadOnly(readOnly);
         participants.setReadOnly(readOnly);
@@ -248,7 +270,7 @@ public final class EventForm extends FormLayout {
 
     private IntegerField idElement() {
         IntegerField integerField = new IntegerField();
-        integerField.setLabel((new TranslatableText("EventId", new Object[0])).translate());
+        integerField.setLabel((new TranslatableText("EventId")).translate());
         integerField.setWidth("400px");
         integerField.setReadOnly(true);
         return integerField;
@@ -287,6 +309,14 @@ public final class EventForm extends FormLayout {
     }
 
     private DatePicker participationDeadlineElement() {
+        DatePickerLocalised datePicker = new DatePickerLocalised();
+        datePicker.setLabel((new TranslatableText("DeadlineParticipation")).translate());
+        datePicker.setMin(LocalDate.now());
+        datePicker.setLocale(TranslatableText.Companion.getCurrentLocale());
+        return datePicker;
+    }
+
+    private DatePicker paymentDeadlineElement() {
         DatePickerLocalised datePicker = new DatePickerLocalised();
         datePicker.setLabel((new TranslatableText("PaymentUntil")).translate());
         datePicker.setMin(LocalDate.now());
@@ -331,11 +361,23 @@ public final class EventForm extends FormLayout {
         buttonPrimary.setDisableOnClick(true);
         buttonPrimary.addClickListener(event -> {
 
-            eventRepository.save(this.toEvent());
-            Notification notification =Notification.show(new TranslatableText("EventSaved").translate());
-            notification.setPosition(Notification.Position.BOTTOM_CENTER);
-            notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-            buttonPrimary.setEnabled(true);
+            try {
+                Event e = this.toEvent();
+                log.info("saving Event: " + e);
+                this.init(eventRepository.save(e));
+                Notification notification =Notification.show(new TranslatableText("EventSaved").translate());
+                notification.setPosition(Notification.Position.BOTTOM_CENTER);
+                notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            } catch (Exception e){
+                log.error("could not save Event", e);
+                Notification notification =Notification.show(new TranslatableText("ErrorWhileSavingEvent").translate());
+                notification.setPosition(Notification.Position.BOTTOM_CENTER);
+                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
+            } finally {
+                buttonPrimary.setEnabled(true);
+            }
+
+
         });
 
         return buttonPrimary;

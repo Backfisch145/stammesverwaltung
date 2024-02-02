@@ -15,12 +15,17 @@ import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.coyote.http11.Http11Nio2Protocol;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 
 @Service
+@Slf4j
 public class EventService {
     private final AuthenticatedUser authenticatedUser;
 
@@ -48,13 +53,13 @@ public class EventService {
     }
 
     public Page<Event> list(Pageable pageable, Specification<Event> filter) {
-        if (authenticatedUser.get().isEmpty()) {
-            return Page.empty();
-        }
 
-        if (!authenticatedUser.get().get().getRoles().contains(Role.ADMIN)) {
-            List<Event> userEvents = repository.findEventsByParticipantsContainingUserId(authenticatedUser.get().get().getId());
-            filter = filter.and((Specification<Event>) (root, query, criteriaBuilder) -> criteriaBuilder.and(criteriaBuilder.isTrue(root.in(userEvents))));
+        User user = authenticatedUser.get().orElseThrow(() -> new HttpClientErrorException(HttpStatus.UNAUTHORIZED));
+
+        if (!user.getRoles().contains(Role.ADMIN)) {
+            List<Event> userEvents = repository.findEventsByParticipantsContainingUserId(user.getId());
+            filter = filter.and((Specification<Event>) (root, query, criteriaBuilder) ->
+                    criteriaBuilder.and(criteriaBuilder.isTrue(root.in(userEvents))));
         }
 
         return repository.findAll(filter, pageable);

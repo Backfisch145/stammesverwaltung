@@ -19,6 +19,7 @@ public interface EventRepository
             JpaSpecificationExecutor<Event> {
 
 
+    @Transactional
     @Query("select e from Event e " +
             " join EventParticipant p on e.id = p.event.id " +
             "  where p in (" +

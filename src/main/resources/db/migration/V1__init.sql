@@ -26,6 +26,7 @@ create table events
     ending_time            timestamp(6),
     name                   varchar(255),
     participation_deadline timestamp(6),
+    payment_deadline       timestamp(6),
     price                  double precision,
     starting_time          timestamp(6),
     version                integer not null

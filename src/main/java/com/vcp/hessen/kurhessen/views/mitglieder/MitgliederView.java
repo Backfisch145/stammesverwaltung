@@ -189,7 +189,7 @@ public class MitgliederView extends Div {
             }
             if (endDate.getValue() != null) {
                 String databaseColumn = "dateOfBirth";
-                predicates.add(criteriaBuilder.greaterThanOrEqualTo(criteriaBuilder.literal(endDate.getValue()),
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(criteriaBuilder.literal(endDate.getValue()),
                         root.get(databaseColumn)));
             }
             if (!levels.isEmpty()) {

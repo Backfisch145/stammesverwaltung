@@ -17,7 +17,7 @@ import java.util.Set;
 public class Event {
 
     @Id
-    @GeneratedValue()
+    @GeneratedValue
     private Integer id;
     @Version
     private int version;
@@ -27,6 +27,7 @@ public class Event {
     private LocalDateTime startingTime;
     private LocalDateTime endingTime;
     private LocalDateTime participationDeadline;
+    private LocalDateTime paymentDeadline;
     private Double price;
 
     @Formula("(" +
@@ -120,7 +121,13 @@ public class Event {
         this.participants = participants;
     }
 
+    public LocalDateTime getPaymentDeadline() {
+        return paymentDeadline;
+    }
 
+    public void setPaymentDeadline(LocalDateTime paymentDeadline) {
+        this.paymentDeadline = paymentDeadline;
+    }
 
     public boolean isUserParticipant(User user) {
         return this.getParticipants().stream()

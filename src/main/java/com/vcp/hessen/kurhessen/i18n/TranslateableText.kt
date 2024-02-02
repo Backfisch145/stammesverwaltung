@@ -14,7 +14,6 @@ open class TranslatableText(val id: String, vararg val params: Any) {
         private val i18NProvider : TranslationProvider = TranslationProvider()
         fun getCurrentLocale() : Locale{
             val locale = UI.getCurrent()?.locale ?: VaadinService.getCurrent().instantiator.i18NProvider.providedLocales?.firstOrNull() ?: Locale.getDefault()
-            log.info { "currentLocale: $locale" }
             return locale
         }
     }
