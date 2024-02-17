@@ -1,56 +1,39 @@
-create sequence event_participants_seq
-    increment by 50;
-
-alter sequence event_participants_seq owner to postgres;
-
-create sequence events_seq
-    increment by 50;
-
-alter sequence events_seq owner to postgres;
-
-create sequence groups_seq
-    increment by 50;
-
-alter sequence groups_seq owner to postgres;
-
-create sequence users_seq
-    increment by 50;
-
-alter sequence users_seq owner to postgres;
-
-create table events
+create table public.events
 (
     id                     integer not null
         primary key,
-    address                varchar(255),
+    price                  double precision,
+    version                integer not null,
     ending_time            timestamp(6),
-    name                   varchar(255),
     participation_deadline timestamp(6),
     payment_deadline       timestamp(6),
-    price                  double precision,
     starting_time          timestamp(6),
-    version                integer not null
+    address                varchar(255),
+    name                   varchar(255)
 );
 
-alter table events
+alter table public.events
     owner to postgres;
 
-create table groups
+create table public.groups
 (
+    version integer not null,
     id      bigint  not null
         primary key,
-    name    varchar(255),
-    version integer not null
+    name    varchar(255)
 );
 
-alter table groups
+alter table public.groups
     owner to postgres;
 
-create table users
+create table public.users
 (
+    date_of_birth    date,
+    membership_id    integer,
+    pictures_allowed boolean,
+    version          integer      not null,
     id               bigint       not null
         primary key,
-    date_of_birth    date,
     eating_habits    varchar(255),
     email            varchar(255),
     first_name       varchar(255) not null,
@@ -65,54 +48,49 @@ create table users
         constraint users_level_check
             check ((level)::text = ANY
                    ((ARRAY ['WOELFLING'::character varying, 'JUNGPFADFINDER'::character varying, 'PFADFINDER'::character varying, 'ROVER'::character varying, 'ERWACHSEN'::character varying])::text[])),
-    membership_id    integer,
     phone            varchar(255),
-    pictures_allowed boolean,
-    profile_picture  oid,
     username         varchar(255),
-    version          integer      not null
+    profile_picture  oid
 );
 
-alter table users
+alter table public.users
     owner to postgres;
 
-create table event_participants
+create table public.event_participants
 (
-    id         bigint  not null
+    event_id   integer
+        constraint fk2x391urx4up03f4jp2y9mdt5x
+            references public.events,
+    id         bigint       not null
         primary key,
-    event_role varchar(255)
+    user_id    bigint       not null
+        unique
+        constraint fkre6m0d4mgt4351tytlkac9jvf
+            references public.users,
+    event_role varchar(255) not null
         constraint event_participants_event_role_check
             check ((event_role)::text = ANY
                    ((ARRAY ['PARTICIPANT'::character varying, 'COOK'::character varying, 'ORGANISER'::character varying])::text[])),
     status     varchar(255)
         constraint event_participants_status_check
             check ((status)::text = ANY
-                   ((ARRAY ['INVITED'::character varying, 'DECLINED'::character varying, 'IN_PAYMENT'::character varying, 'IN_REPAYMENT'::character varying, 'REGISTERED'::character varying])::text[])),
-    version    integer not null,
-    event_id   integer
-        constraint fk2x391urx4up03f4jp2y9mdt5x
-            references events,
-    user_id    bigint
-        constraint uk_dilgs22qiib3pm7226q2exo6p
-            unique
-        constraint fkre6m0d4mgt4351tytlkac9jvf
-            references users
+                   ((ARRAY ['INVITED'::character varying, 'DECLINED'::character varying, 'IN_PAYMENT'::character varying, 'IN_REPAYMENT'::character varying, 'REGISTERED'::character varying])::text[]))
 );
 
-alter table event_participants
+alter table public.event_participants
     owner to postgres;
 
-create table user_roles
+create table public.user_roles
 (
     user_id bigint not null
         constraint fkhfh9dx7w3ubf1co1vdev94g3f
-            references users,
+            references public.users,
     roles   varchar(255)
         constraint user_roles_roles_check
             check ((roles)::text = ANY
                    ((ARRAY ['USER'::character varying, 'MODERATOR'::character varying, 'ADMIN'::character varying])::text[]))
 );
 
-alter table user_roles
+alter table public.user_roles
     owner to postgres;
 

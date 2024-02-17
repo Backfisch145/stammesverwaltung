@@ -2,14 +2,15 @@ package com.vcp.hessen.kurhessen.data.event;
 
 import com.vcp.hessen.kurhessen.data.User;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.proxy.HibernateProxy;
 
 import java.util.Objects;
 
+@Slf4j
+@Getter
 @Entity
 @Table(name = "event_participants")
 @AllArgsConstructor
@@ -19,20 +20,20 @@ public class EventParticipant {
     @Id
     @GeneratedValue()
     private Long id;
-    @Version
-    private int version;
     @Enumerated(EnumType.STRING)
     private EventParticipationStatus status;
+    @NotNull
     @Enumerated(EnumType.STRING)
     private EventRole eventRole;
 
+    @NotNull
     @OneToOne
-    @JoinColumn(name = "user_id")
     private User user;
 
-    @ManyToOne
-    @JoinColumn(name = "event_id")
+    @ManyToOne(cascade = CascadeType.ALL, optional = false)
+    @JoinColumn(name = "event_id", nullable = false)
     private Event event;
+
 
     public EventParticipant(EventParticipationStatus status, EventRole eventRole, User user, Event event) {
         this.status = status;
@@ -41,48 +42,20 @@ public class EventParticipant {
         this.event = event;
     }
 
-    public Long getId() {
-        return id;
-    }
-
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public int getVersion() {
-        return version;
-    }
-
-    public void setVersion(int version) {
-        this.version = version;
-    }
-
-    public EventParticipationStatus getStatus() {
-        return status;
     }
 
     public void setStatus(EventParticipationStatus status) {
         this.status = status;
     }
 
-    public EventRole getEventRole() {
-        return eventRole;
-    }
-
     public void setEventRole(EventRole eventRole) {
         this.eventRole = eventRole;
     }
 
-    public User getUser() {
-        return user;
-    }
-
     public void setUser(User user) {
         this.user = user;
-    }
-
-    public Event getEvent() {
-        return event;
     }
 
     public void setEvent(Event event) {
@@ -91,17 +64,31 @@ public class EventParticipant {
 
     @Override
     public final boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null) return false;
-        Class<?> oEffectiveClass = o instanceof HibernateProxy ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass() : o.getClass();
-        Class<?> thisEffectiveClass = this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass() : this.getClass();
-        if (thisEffectiveClass != oEffectiveClass) return false;
+        if (this == o) {
+            log.info("1");
+            return true;
+        };
+        if (o == null) {
+            log.info("2");
+            return false;
+        }
+        Class<?> oEffectiveClass = o instanceof HibernateProxy proxy ? proxy.getHibernateLazyInitializer().getPersistentClass() : o.getClass();
+        Class<?> thisEffectiveClass = this instanceof HibernateProxy proxy ? proxy.getHibernateLazyInitializer().getPersistentClass() : this.getClass();
+        if (thisEffectiveClass != oEffectiveClass) {
+            log.info("3");
+            return false;
+        }
         EventParticipant that = (EventParticipant) o;
-        return getId() != null && Objects.equals(getId(), that.getId());
+        if (getId() != null && Objects.equals(getId(), that.getId())) {
+            log.info("4");
+            return true;
+        }
+
+        return false;
     }
 
     @Override
     public final int hashCode() {
-        return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass().hashCode() : getClass().hashCode();
+        return this instanceof HibernateProxy proxy ? proxy.getHibernateLazyInitializer().getPersistentClass().hashCode() : getClass().hashCode();
     }
 }

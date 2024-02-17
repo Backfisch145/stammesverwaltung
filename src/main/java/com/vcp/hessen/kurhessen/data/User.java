@@ -235,10 +235,6 @@ public class User {
         }
         return eatingHabits;
     }
-
-    public boolean isAdmin() {
-        return this.roles.contains(Role.ADMIN);
-    }
     public boolean hasRole(Role role) {
         return this.roles.contains(role);
     }

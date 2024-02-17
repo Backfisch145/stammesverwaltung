@@ -1,6 +1,7 @@
 package com.vcp.hessen.kurhessen.views.veranstaltungen;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
@@ -9,6 +10,7 @@ import com.vaadin.flow.component.dependency.Uses;
 import com.vaadin.flow.component.grid.ColumnTextAlign;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.grid.ItemClickEvent;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -36,6 +38,7 @@ import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
@@ -51,12 +54,14 @@ public class EventView extends Div {
     private Filters filters;
     private final EventService eventService;
 
+    private Event selectedEvent = null;
+
     public EventView(EventService eventService) {
         this.eventService = eventService;
         setSizeFull();
         addClassNames("veranstaltungen-view");
 
-        filters = new Filters(() -> refreshGrid());
+        filters = new Filters(this::refreshGrid);
         VerticalLayout layout = new VerticalLayout(createMobileFilters(), filters, createGrid());
         layout.setSizeFull();
         layout.setPadding(false);
@@ -64,6 +69,7 @@ public class EventView extends Div {
         add(layout);
     }
 
+    @NotNull
     private HorizontalLayout createMobileFilters() {
         // Mobile version
         HorizontalLayout mobileFilters = new HorizontalLayout();
@@ -203,6 +209,18 @@ public class EventView extends Div {
         grid.setItems(query -> eventService.list(
                 PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query)),
                 filters).stream());
+
+        grid.addItemClickListener((ComponentEventListener<ItemClickEvent<Event>>) eventItemClickEvent -> {
+            Event clickedEvent = eventItemClickEvent.getItem();
+
+            if (selectedEvent == clickedEvent) {
+                getUI().ifPresent(ui -> ui.navigate(String.format(AddEventView.EVENT_ROUTE_TEMPLATE, clickedEvent.getId())));
+            } else {
+                selectedEvent = clickedEvent;
+            }
+
+
+        });
         grid.addThemeVariants(GridVariant.LUMO_NO_BORDER);
         grid.addClassNames(LumoUtility.Border.TOP, LumoUtility.BorderColor.CONTRAST_10);
 
@@ -233,6 +251,8 @@ public class EventView extends Div {
             }
         };
     }
+    @NotNull
+    @Contract(pure = true)
     private static ValueProvider<Event, String> participationDeadlineRenderer() {
         return event -> {
             LocalDateTime ldt = event.getParticipationDeadline();
@@ -244,6 +264,8 @@ public class EventView extends Div {
             }
         };
     }
+    @NotNull
+    @Contract(pure = true)
     private static ValueProvider<Event, String> paymentDeadlineRenderer() {
         return event -> {
             LocalDateTime ldt = event.getPaymentDeadline();
@@ -255,6 +277,8 @@ public class EventView extends Div {
             }
         };
     }
+    @NotNull
+    @Contract(pure = true)
     private static ValueProvider<Event, String> priceRenderer() {
         return event -> event.getPrice() + " €";
     }

@@ -20,11 +20,6 @@ public class TranslationProvider implements I18NProvider {
 
     @Override
     public List<Locale> getProvidedLocales() {
-        String msg = "Available locales: ";
-        for (Locale locale : locales) {
-         msg += " " + locale;
-        }
-        log.info(msg);
         return locales;
     }
 
