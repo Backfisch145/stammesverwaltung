@@ -1,4 +1,4 @@
-package com.vcp.hessen.kurhessen.exceptions;
+package com.vcp.hessen.kurhessen.core.exceptions;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Tag;

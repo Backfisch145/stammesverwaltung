@@ -1,22 +1,17 @@
-package com.vcp.hessen.kurhessen.services;
+package com.vcp.hessen.kurhessen.features.events;
 
 import com.vcp.hessen.kurhessen.data.Role;
 import com.vcp.hessen.kurhessen.data.User;
-import com.vcp.hessen.kurhessen.data.event.Event;
-import com.vcp.hessen.kurhessen.data.event.EventRepository;
+import com.vcp.hessen.kurhessen.features.events.data.Event;
+import com.vcp.hessen.kurhessen.features.events.data.EventRepository;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 
-import com.vcp.hessen.kurhessen.security.AuthenticatedUser;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
+import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.coyote.http11.Http11Nio2Protocol;
+import org.hibernate.Hibernate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -36,12 +31,25 @@ public class EventService {
         this.repository = repository;
     }
 
+    public List<Event> getAll() {
+        return repository.findAll();
+    }
     public Optional<Event> get(Integer id) {
         return repository.findById(id);
     }
+    @Transactional
+    public Optional<Event> getComplete(Integer id) {
+        Optional<Event> e = repository.findById(id);
+        e.ifPresent(event -> Hibernate.initialize(event.getParticipants()));
+        return e;
+    }
 
+    @Transactional
     public Event update(Event entity) {
-        return repository.save(entity);
+        Event e = repository.save(entity);
+
+
+        return e;
     }
 
     public void delete(Integer id) {

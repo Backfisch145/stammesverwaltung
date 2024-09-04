@@ -12,34 +12,31 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vcp.hessen.kurhessen.core.i18n.TranslationHelper;
 import com.vcp.hessen.kurhessen.data.User;
-import com.vcp.hessen.kurhessen.data.UserRepository;
-import com.vcp.hessen.kurhessen.data.event.*;
-import com.vcp.hessen.kurhessen.i18n.TranslatableText;
+import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
 
+import com.vcp.hessen.kurhessen.features.events.data.Event;
+import com.vcp.hessen.kurhessen.features.events.data.EventParticipant;
+import com.vcp.hessen.kurhessen.features.events.data.EventParticipationStatus;
+import com.vcp.hessen.kurhessen.features.events.data.EventRole;
+import com.vcp.hessen.kurhessen.features.usermanagement.UserService;
+import com.vcp.hessen.kurhessen.core.util.Callback;
 import com.vcp.hessen.kurhessen.views.components.DatePickerLocalised;
 import jakarta.annotation.security.RolesAllowed;
-import jakarta.transaction.Transaction;
 import kotlin.jvm.internal.Intrinsics;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 @Slf4j
 @RolesAllowed("MODERATOR")
 public final class EventForm extends FormLayout {
-
-    /**
-     * Do not edit root element, only used to reset on Cancel
-     * */
-    private Event rootEvent = null;
-    private final UserRepository userRepository;
-    private final EventRepository eventRepository;
-    private final EventParticipantRepository eventParticipantRepository;
     @NotNull
     private final IntegerField eventId;
     @NotNull
@@ -63,20 +60,26 @@ public final class EventForm extends FormLayout {
     private final Button saveButton;
     @NotNull
     private final Button editButton;
-    @NotNull
-    private final Button cancelButton;
+//    @NotNull
+//    private final Button cancelButton;
+
 
     private final H3 titel = new H3();
-
     public enum Mode {
         CREATE,EDIT,SHOW;
+
     }
 
 
-    public EventForm(UserRepository userRepository, EventRepository eventRepository, EventParticipantRepository eventParticipantRepository) {
-        this.userRepository = userRepository;
-        this.eventRepository = eventRepository;
-        this.eventParticipantRepository = eventParticipantRepository;
+
+    private Event rootEvent = null;
+    private UserService userService = null;
+    private final Callback<Event> onSave;
+
+    public EventForm(UserService userService, Callback<Event> onSave) {
+
+        this.onSave = onSave;
+        this.userService = userService;
 
         eventId = this.idElement();
         name = this.nameElement();
@@ -90,8 +93,20 @@ public final class EventForm extends FormLayout {
         participants = this.participantsElement();
         saveButton = this.saveButton();
         editButton = this.editButton();
-        cancelButton = this.cancelButton();
+//        cancelButton = this.cancelButton();
 
+        buildGui();
+    }
+
+
+    public void setEvent(Event event) {
+        if (event == null) {
+            throw new RuntimeException("Event must not be NULL!");
+        }
+        prefill(event);
+    }
+
+    private void buildGui() {
         startingTime.addValueChangeListener(e -> endingTime.setMin(e.getValue()));
 
         titel.setText(new TranslatableText("CreateNewEvent").translate());
@@ -113,38 +128,42 @@ public final class EventForm extends FormLayout {
         this.add(this.participants);
         this.add(this.saveButton);
         this.add(this.editButton);
-        this.add(this.cancelButton);
+//        this.add(this.cancelButton);
     }
-    public void init(@NotNull Event event) {
+
+    private void prefill(@NotNull Event event) {
         Intrinsics.checkNotNullParameter(event, "event");
 
         rootEvent = event;
 
-        this.eventId.setValue(event.getId());
-        if (event.getName() != null) {
-            this.name.setValue(event.getName());
+        this.eventId.setValue(rootEvent.getId());
+        if (rootEvent.getName() != null) {
+            this.name.setValue(rootEvent.getName());
         }
-        if (event.getStartingTime() != null) {
-            this.startingTime.setValue(event.getStartingTime().toLocalDate());
+        if (rootEvent.getStartingTime() != null) {
+            this.startingTime.setValue(rootEvent.getStartingTime().toLocalDate());
         }
-        if (event.getEndingTime() != null) {
-            this.endingTime.setValue(event.getEndingTime().toLocalDate());
+        if (rootEvent.getEndingTime() != null) {
+            this.endingTime.setValue(rootEvent.getEndingTime().toLocalDate());
         }
-        if (event.getPrice() != null) {
-            this.price.setValue(event.getPrice());
+        if (rootEvent.getPrice() != null) {
+            this.price.setValue(rootEvent.getPrice());
         }
-        if (event.getParticipationDeadline() != null) {
-            this.participationDeadline.setValue(event.getParticipationDeadline().toLocalDate());
+        if (rootEvent.getParticipationDeadline() != null) {
+            this.participationDeadline.setValue(rootEvent.getParticipationDeadline().toLocalDate());
         }
-        if (event.getPaymentDeadline() != null) {
-            this.paymentDeadline.setValue(event.getPaymentDeadline().toLocalDate());
+        if (rootEvent.getPaymentDeadline() != null) {
+            this.paymentDeadline.setValue(rootEvent.getPaymentDeadline().toLocalDate());
         }
 
+        List<User> users = userService.getAll();
+        this.participants.setItems(users);
+        this.organisers.setItems(users);
 
         List<User> currentParticipants = new ArrayList<>();
         List<User> currentOrganisators = new ArrayList<>();
 
-        event.getParticipants().forEach(participant -> {
+        rootEvent.getParticipants().forEach(participant -> {
             if (participant.getUser() != null) {
                 if (participant.getEventRole() == EventRole.ORGANISER) {
                     currentOrganisators.add(participant.getUser());
@@ -159,14 +178,8 @@ public final class EventForm extends FormLayout {
 
         setMode(Mode.SHOW);
     }
-    @NotNull
-    public Event toEvent() {
-        Event event = new Event();
-        this.applyForm(event);
-        return event;
-    }
 
-    public void applyForm(@NotNull Event event) {
+    private void applyForm(@NotNull Event event) {
         Intrinsics.checkNotNullParameter(event, "event");
         event.setId(this.eventId.getValue());
         event.setName(this.name.getValue());
@@ -187,7 +200,6 @@ public final class EventForm extends FormLayout {
 
         event.setPrice(this.price.getValue());
         event.setAddress(this.address.getValue());
-
 
         Set<User> updatedParticipants = new HashSet<>();
         for (EventParticipant existingParticipant : event.getParticipants()) {
@@ -273,7 +285,7 @@ public final class EventForm extends FormLayout {
 
             saveButton.setVisible(false);
             editButton.setVisible(true);
-            cancelButton.setVisible(false);
+//            cancelButton.setVisible(false);
             return;
         }
 
@@ -301,7 +313,7 @@ public final class EventForm extends FormLayout {
 
             saveButton.setVisible(true);
             editButton.setVisible(false);
-            cancelButton.setVisible(true);
+//            cancelButton.setVisible(true);
         }
 
 
@@ -373,34 +385,30 @@ public final class EventForm extends FormLayout {
     }
 
     private DatePicker startingTimeElement() {
-        DatePickerLocalised datePicker = new DatePickerLocalised();
-        datePicker.setLabel((new TranslatableText("From")).translate());
+        DatePickerLocalised datePicker = new DatePickerLocalised("From");
         datePicker.setMin(LocalDate.now());
-        datePicker.setLocale(TranslatableText.Companion.getCurrentLocale());
+        datePicker.setLocale(TranslationHelper.Companion.getCurrentLocale());
         return datePicker;
     }
 
     private DatePicker endingTimeElement() {
-        DatePickerLocalised datePicker = new DatePickerLocalised();
-        datePicker.setLabel((new TranslatableText("To")).translate());
+        DatePickerLocalised datePicker = new DatePickerLocalised("To");
         datePicker.setMin(LocalDate.now());
-        datePicker.setLocale(TranslatableText.Companion.getCurrentLocale());
+        datePicker.setLocale(TranslationHelper.Companion.getCurrentLocale());
         return datePicker;
     }
 
     private DatePicker participationDeadlineElement() {
-        DatePickerLocalised datePicker = new DatePickerLocalised();
-        datePicker.setLabel((new TranslatableText("DeadlineParticipation")).translate());
+        DatePickerLocalised datePicker = new DatePickerLocalised("DeadlineParticipation");
         datePicker.setMin(LocalDate.now());
-        datePicker.setLocale(TranslatableText.Companion.getCurrentLocale());
+        datePicker.setLocale(TranslationHelper.Companion.getCurrentLocale());
         return datePicker;
     }
 
     private DatePicker paymentDeadlineElement() {
-        DatePickerLocalised datePicker = new DatePickerLocalised();
-        datePicker.setLabel((new TranslatableText("PaymentUntil")).translate());
+        DatePickerLocalised datePicker = new DatePickerLocalised("PaymentUntil");
         datePicker.setMin(LocalDate.now());
-        datePicker.setLocale(TranslatableText.Companion.getCurrentLocale());
+        datePicker.setLocale(TranslationHelper.Companion.getCurrentLocale());
         return datePicker;
     }
 
@@ -412,20 +420,19 @@ public final class EventForm extends FormLayout {
         return numberField;
     }
 
+    @NotNull
     private MultiSelectComboBox<User> organisersElement() {
         MultiSelectComboBox<User> comboBox = new MultiSelectComboBox<>();
         comboBox.setLabel((new TranslatableText("Organisers")).translate());
-
-        comboBox.setItems(userRepository.findAll());
         comboBox.setItemLabelGenerator( u -> u.getFirstName() + " " + u.getLastName());
         comboBox.setWidthFull();
         return comboBox;
     }
 
+    @NotNull
     private MultiSelectComboBox<User> participantsElement() {
         MultiSelectComboBox<User> comboBox = new MultiSelectComboBox<>();
         comboBox.setLabel((new TranslatableText("Participants")).translate());
-        comboBox.setItems(userRepository.findAll());
         comboBox.setItemLabelGenerator( u -> u.getFirstName() + " " + u.getLastName());
         comboBox.setWidthFull();
         return comboBox;
@@ -441,24 +448,49 @@ public final class EventForm extends FormLayout {
         buttonPrimary.setDisableOnClick(true);
         buttonPrimary.addClickListener(event -> {
 
+
             try {
-                Event e = this.toEvent();
-                log.info("event to be saved: " + e);
+                log.info("event to be saved: " + rootEvent);
+
+                if (onSave != null) {
+                    applyForm(rootEvent);
+                    onSave.call(rootEvent);
+                }
 
 
 
-//                Set<EventParticipant> formParticipants = new HashSet<>(e.getParticipants());
 
+
+//                List<EventParticipant> s = eventParticipantRepository.saveAll(e.getParticipants());
+//
 //                e.getParticipants().clear();
-//                e = eventRepository.save(e);
-//                e.getParticipants().addAll(formParticipants);
+//                e.getParticipants().addAll(s);
 
-                this.init(eventRepository.save(e));
+//                ArrayList<EventParticipant> participants = new ArrayList<>(e.getParticipants());
+//                e.getParticipants().clear();
+//                Event evnt = eventRepository.save(e);
+
+//                for (EventParticipant participant : participants) {
+//                    participant.setEvent(e);
+//                    eventParticipantRepository.save(participant);
+//                }
+
+//                eventParticipantRepository.saveAll(e.getParticipants());
+//                this.prefill(eventService.update(rootEvent));
 
                 Notification notification = Notification.show(new TranslatableText("EventSaved").translate());
                 notification.setPosition(Notification.Position.BOTTOM_CENTER);
                 notification.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                 setMode(Mode.SHOW);
+
+
+            } catch (ObjectOptimisticLockingFailureException e){
+                Notification notification =Notification.show(
+                        new TranslatableText("SomeoneEditedThisEventWhileYouMadeChanges").translate(),
+                        5000,
+                        Notification.Position.BOTTOM_CENTER
+                        );
+                notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
             } catch (Exception e){
                 log.error("could not save Event", e);
                 Notification notification =Notification.show(new TranslatableText("ErrorWhileSavingEvent").translate());
@@ -497,8 +529,8 @@ public final class EventForm extends FormLayout {
 
         cancelBtn.setDisableOnClick(true);
         cancelBtn.addClickListener(event -> {
-            init(rootEvent);
-            cancelBtn.setEnabled(true);
+//            prefill(rootEvent);
+//            cancelBtn.setEnabled(true);
         });
 
         return cancelBtn;

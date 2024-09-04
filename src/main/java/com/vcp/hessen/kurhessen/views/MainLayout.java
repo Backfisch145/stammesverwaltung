@@ -15,18 +15,22 @@ import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.auth.AccessAnnotationChecker;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vcp.hessen.kurhessen.data.User;
-import com.vcp.hessen.kurhessen.security.AuthenticatedUser;
+import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
+import com.vcp.hessen.kurhessen.features.events.EventConfig;
 import com.vcp.hessen.kurhessen.views.about.AboutView;
 import com.vcp.hessen.kurhessen.views.meinedaten.MeineDatenView;
 import com.vcp.hessen.kurhessen.views.mitglieder.MitgliederView;
 import com.vcp.hessen.kurhessen.views.veranstaltungen.EventView;
 import java.io.ByteArrayInputStream;
 import java.util.Optional;
+
+import lombok.extern.slf4j.Slf4j;
 import org.vaadin.lineawesome.LineAwesomeIcon;
 
 /**
  * The main view is a top-level placeholder for other views.
  */
+@Slf4j
 public class MainLayout extends AppLayout {
 
     private H2 viewTitle;
@@ -34,9 +38,12 @@ public class MainLayout extends AppLayout {
     private final AuthenticatedUser authenticatedUser;
     private final AccessAnnotationChecker accessChecker;
 
-    public MainLayout(AuthenticatedUser authenticatedUser, AccessAnnotationChecker accessChecker) {
+    private final EventConfig eventConfig;
+
+    public MainLayout(AuthenticatedUser authenticatedUser, AccessAnnotationChecker accessChecker, EventConfig eventConfig) {
         this.authenticatedUser = authenticatedUser;
         this.accessChecker = accessChecker;
+        this.eventConfig = eventConfig;
 
         setPrimarySection(Section.DRAWER);
         addDrawerContent();
@@ -65,6 +72,8 @@ public class MainLayout extends AppLayout {
 
     private SideNav createNavigation() {
         SideNav nav = new SideNav();
+        log.info("eventConfig: " + eventConfig);
+
 
         if (accessChecker.hasAccess(MeineDatenView.class)) {
             nav.addItem(new SideNavItem("Meine Daten", MeineDatenView.class, LineAwesomeIcon.USER.create()));
@@ -75,11 +84,14 @@ public class MainLayout extends AppLayout {
             nav.addItem(new SideNavItem("Mitglieder", MitgliederView.class, LineAwesomeIcon.ADDRESS_CARD.create()));
 
         }
-        if (accessChecker.hasAccess(EventView.class)) {
-            nav.addItem(
-                    new SideNavItem("Veranstaltungen", EventView.class, LineAwesomeIcon.TREE_SOLID.create()));
-
+        if (eventConfig.isEnabled()) {
+            if (accessChecker.hasAccess(EventView.class)) {
+                nav.addItem(
+                        new SideNavItem("Veranstaltungen", EventView.class, LineAwesomeIcon.TREE_SOLID.create()));
+            }
         }
+
+
         if (accessChecker.hasAccess(AboutView.class)) {
             nav.addItem(new SideNavItem("About", AboutView.class, LineAwesomeIcon.BOOK_OPEN_SOLID.create()));
 

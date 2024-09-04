@@ -7,13 +7,16 @@ import com.vaadin.flow.component.textfield.IntegerField
 import com.vaadin.flow.component.textfield.TextArea
 import com.vaadin.flow.component.textfield.TextField
 import com.vcp.hessen.kurhessen.components.PictureAllowanceCheckBox
+import com.vcp.hessen.kurhessen.core.i18n.TranslatableText
+import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser
 import com.vcp.hessen.kurhessen.data.Gender
 import com.vcp.hessen.kurhessen.data.User
-import com.vcp.hessen.kurhessen.i18n.TranslatableText
-import com.vcp.hessen.kurhessen.security.AuthenticatedUser
-import java.util.function.Consumer
+import com.vcp.hessen.kurhessen.views.components.DatePickerLocalised
+import io.github.oshai.kotlinlogging.KotlinLogging
 
-class UserForm(private val authenticatedUser: AuthenticatedUser) {
+
+public class UserForm(private val authenticatedUser: AuthenticatedUser) {
+    val log = KotlinLogging.logger("UserForm")
 
     val memberId : IntegerField = membershipIdElement()
     val firstName : TextField = firstNameElement()
@@ -28,7 +31,7 @@ class UserForm(private val authenticatedUser: AuthenticatedUser) {
 
 
     fun isValid(): Boolean {
-        if (memberId?.isInvalid != false) {
+        if (memberId.isInvalid) {
             return false
         }
 
@@ -69,9 +72,9 @@ class UserForm(private val authenticatedUser: AuthenticatedUser) {
         integerField.label = TranslatableText("MembershipNumber").translate()
         integerField.width = "400px"
         integerField.isReadOnly = true
-        authenticatedUser.get().ifPresent(Consumer<User> { u: User ->
+        authenticatedUser.get().ifPresent { u: User ->
             integerField.value = u.membershipId
-        })
+        }
         return integerField
     }
 
@@ -80,9 +83,9 @@ class UserForm(private val authenticatedUser: AuthenticatedUser) {
         textField.label = TranslatableText("FirstName").translate()
         textField.width = "400px"
         textField.minLength = 1
-        authenticatedUser.get().ifPresent(Consumer<User> { u: User ->
+        authenticatedUser.get().ifPresent { u: User ->
             textField.value = u.firstName
-        })
+        }
         textField.isRequired = true
         return textField
     }
@@ -92,9 +95,9 @@ class UserForm(private val authenticatedUser: AuthenticatedUser) {
         textField.label = TranslatableText("LastName").translate()
         textField.width = "400px"
         textField.minLength = 1
-        authenticatedUser.get().ifPresent(Consumer<User> { u: User ->
+        authenticatedUser.get().ifPresent { u: User ->
             textField.value = u.lastName
-        })
+        }
         textField.isRequired = true
         return textField
     }
@@ -103,9 +106,9 @@ class UserForm(private val authenticatedUser: AuthenticatedUser) {
         val textField = TextField()
         textField.label = TranslatableText("Phone").translate()
         textField.width = "min-content"
-        authenticatedUser.get().ifPresent(Consumer<User> { u: User ->
+        authenticatedUser.get().ifPresent { u: User ->
             textField.value = u.phone
-        })
+        }
         return textField
     }
 
@@ -113,19 +116,19 @@ class UserForm(private val authenticatedUser: AuthenticatedUser) {
         val emailField = EmailField()
         emailField.label = TranslatableText("Email").translate()
         emailField.width = "min-content"
-        authenticatedUser.get().ifPresent(Consumer<User> { u: User ->
+        authenticatedUser.get().ifPresent { u: User ->
             emailField.value = u.email
-        })
+        }
         emailField.isRequired = true
         return emailField
     }
 
     fun birthdayElement(): DatePicker {
-        val datePicker = DatePicker()
-        datePicker.label = TranslatableText("Birthday").translate()
-        authenticatedUser.get().ifPresent(Consumer<User> { u: User ->
+        val datePicker = DatePickerLocalised("Birthday")
+        authenticatedUser.get().ifPresent { u: User ->
             datePicker.value = u.dateOfBirth
-        })
+        }
+
         return datePicker
     }
 
@@ -148,8 +151,9 @@ class UserForm(private val authenticatedUser: AuthenticatedUser) {
         textArea.label = TranslatableText("Intolerances").translate()
         textArea.placeholder = TranslatableText("IntolerancesPlaceholder").translate()
         textArea.setWidthFull()
+        textArea.helperText = "Sachen auf die Ihr Kind allergisch reagiert oder nicht verträgt"
         authenticatedUser.get().ifPresent { u: User ->
-            textArea.value = u.getIntolerances()
+            textArea.value = u.intolerances ?: ""
         }
         return textArea
     }
@@ -159,8 +163,9 @@ class UserForm(private val authenticatedUser: AuthenticatedUser) {
         textArea.label = TranslatableText("EatingHabits").translate()
         textArea.placeholder = TranslatableText("EatingHabitsPlaceholder").translate()
         textArea.setWidthFull()
+        textArea.helperText = "Sachen die Ihr Kind gerne oder ungerne isst"
         authenticatedUser.get().ifPresent { u: User ->
-            textArea.value = u.getEatingHabits()
+            textArea.value = u.eatingHabits ?: ""
         }
         return textArea
     }

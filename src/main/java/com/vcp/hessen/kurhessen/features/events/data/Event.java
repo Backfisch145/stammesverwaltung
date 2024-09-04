@@ -1,4 +1,4 @@
-package com.vcp.hessen.kurhessen.data.event;
+package com.vcp.hessen.kurhessen.features.events.data;
 
 import com.vcp.hessen.kurhessen.data.Role;
 import com.vcp.hessen.kurhessen.data.User;
@@ -47,9 +47,10 @@ public class Event {
     @Transient
     private int participantCount;
 
-    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
-    private Set<EventParticipant> participants = new LinkedHashSet<>();
 
+
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL)
+    private Set<EventParticipant> participants = new LinkedHashSet<>();
 
     public boolean isUserParticipant(User user) {
         return this.getParticipants().stream()

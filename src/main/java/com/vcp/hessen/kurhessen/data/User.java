@@ -1,15 +1,14 @@
 package com.vcp.hessen.kurhessen.data;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.vcp.hessen.kurhessen.data.event.Event;
+import com.vcp.hessen.kurhessen.features.events.data.EventParticipant;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import lombok.*;
-import org.hibernate.annotations.Fetch;
 import org.hibernate.proxy.HibernateProxy;
 
 import java.time.LocalDate;
-import java.util.LinkedHashSet;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 
@@ -20,60 +19,64 @@ import java.util.Set;
 @NoArgsConstructor
 public class User {
 
-    @Getter
     @Id
     @GeneratedValue()
     private Long id;
-    @Getter
+
     @Version
     private int version;
-    @Getter
+
     @Column
     private Integer membershipId;
-    @Getter
+
     @Column
     private String username;
-    @Getter
+
     @Column(nullable = false)
     private String firstName;
-    @Getter
+
     @Column(nullable = false)
     private String lastName;
-    @Getter
+
     @Column
     @Email
     private String email;
-    @Getter
+
     @Column
     private String phone;
-    @Getter
+
     @Column
     private LocalDate dateOfBirth;
-    @Getter
+
     @Column
     @Enumerated(EnumType.STRING)
     private Level level;
-    @Getter
+
     @Column
     @Enumerated(EnumType.STRING)
     private Gender gender;
-    @Getter
+
     @JsonIgnore
     private String hashedPassword;
-    @Getter
+
     @Enumerated(EnumType.STRING)
     @ElementCollection(fetch = FetchType.EAGER)
     private Set<Role> roles;
-    @Getter
+
     @Lob
     @Column(length = 1000000)
     private byte[] profilePicture;
 
     private String intolerances;
+
     private String eatingHabits;
 
-    @Getter
     private Boolean picturesAllowed;
+
+
+    @OneToMany(mappedBy = "user")
+    @ToString.Exclude
+    private Set<EventParticipant> participants;
 
     public String getDisplayName() {
        return firstName + " " + lastName;
@@ -91,7 +94,30 @@ public class User {
         this.level = user.level;
         this.gender = user.gender;
         this.roles = user.roles;
-        this.profilePicture = user.profilePicture;
+        this.intolerances = user.intolerances;
+        this.eatingHabits = user.eatingHabits;
+        this.picturesAllowed = user.picturesAllowed;
+        this.participants = user.participants;
+    }
+
+    public boolean hasRole(Role role) {
+        return this.roles.contains(role);
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null) return false;
+        Class<?> oEffectiveClass = o instanceof HibernateProxy ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass() : o.getClass();
+        Class<?> thisEffectiveClass = this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass() : this.getClass();
+        if (thisEffectiveClass != oEffectiveClass) return false;
+        User user = (User) o;
+        return getId() != null && Objects.equals(getId(), user.getId());
+    }
+
+    @Override
+    public final int hashCode() {
+        return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass().hashCode() : getClass().hashCode();
     }
 
     public Long getId() {
@@ -206,8 +232,16 @@ public class User {
         this.profilePicture = profilePicture;
     }
 
+    public String getIntolerances() {
+        return intolerances;
+    }
+
     public void setIntolerances(String intolerances) {
         this.intolerances = intolerances;
+    }
+
+    public String getEatingHabits() {
+        return eatingHabits;
     }
 
     public void setEatingHabits(String eatingHabits) {
@@ -222,38 +256,11 @@ public class User {
         this.picturesAllowed = picturesAllowed;
     }
 
-    public String getIntolerances() {
-        if (intolerances == null) {
-            return "";
-        }
-        return intolerances;
+    public Set<EventParticipant> getParticipants() {
+        return participants;
     }
 
-    public String getEatingHabits() {
-        if (eatingHabits == null) {
-            return "";
-        }
-        return eatingHabits;
+    public void setParticipants(Set<EventParticipant> participants) {
+        this.participants = participants;
     }
-    public boolean hasRole(Role role) {
-        return this.roles.contains(role);
-    }
-
-    @Override
-    public final boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null) return false;
-        Class<?> oEffectiveClass = o instanceof HibernateProxy ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass() : o.getClass();
-        Class<?> thisEffectiveClass = this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass() : this.getClass();
-        if (thisEffectiveClass != oEffectiveClass) return false;
-        User user = (User) o;
-        return getId() != null && Objects.equals(getId(), user.getId());
-    }
-
-    @Override
-    public final int hashCode() {
-        return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass().hashCode() : getClass().hashCode();
-    }
-
-
 }

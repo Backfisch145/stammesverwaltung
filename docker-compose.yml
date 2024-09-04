@@ -2,10 +2,10 @@ version: '3.1'
 
 services:
   postgres:
-    image: postgres:latest
+    image: bitnami/postgresql:latest
     environment:
-      POSTGRES_DB: 'stammesverwaltung'
-      POSTGRES_PASSWORD: 'vaadinstart'
-      POSTGRES_USER: 'vaadinstart'
+      POSTGRESQL_USERNAME: 'vaadinstart'
+      POSTGRESQL_PASSWORD: 'vaadinstart'
+      POSTGRESQL_DATABASE: 'stammesverwaltung'
     ports:
       - 5432:5432

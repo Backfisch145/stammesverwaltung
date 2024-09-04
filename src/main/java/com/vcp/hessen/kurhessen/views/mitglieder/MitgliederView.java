@@ -22,9 +22,10 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import com.vcp.hessen.kurhessen.core.i18n.TranslationHelper;
 import com.vcp.hessen.kurhessen.data.*;
-import com.vcp.hessen.kurhessen.i18n.TranslatableText;
-import com.vcp.hessen.kurhessen.services.UserService;
+import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
+import com.vcp.hessen.kurhessen.features.usermanagement.UserService;
 import com.vcp.hessen.kurhessen.views.MainLayout;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -271,7 +272,7 @@ public class MitgliederView extends Div {
     }
     @NotNull
     private static ValueProvider<User, String> dateOfBirthRenderer() {
-        DateTimeFormatter usDateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(TranslatableText.Companion.getCurrentLocale());
+        DateTimeFormatter usDateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(TranslationHelper.Companion.getCurrentLocale());
         return user -> user.getDateOfBirth().format(usDateFormatter);
     }
 

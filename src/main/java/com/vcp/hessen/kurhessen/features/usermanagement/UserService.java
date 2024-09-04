@@ -1,7 +1,9 @@
-package com.vcp.hessen.kurhessen.services;
+package com.vcp.hessen.kurhessen.features.usermanagement;
 
 import com.vcp.hessen.kurhessen.data.User;
 import com.vcp.hessen.kurhessen.data.UserRepository;
+
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +19,9 @@ public class UserService {
         this.repository = repository;
     }
 
+    public List<User> getAll() {
+        return repository.findAll();
+    }
     public Optional<User> get(Long id) {
         return repository.findById(id);
     }

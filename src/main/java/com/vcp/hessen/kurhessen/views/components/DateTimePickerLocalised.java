@@ -2,7 +2,8 @@ package com.vcp.hessen.kurhessen.views.components;
 
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
-import com.vcp.hessen.kurhessen.i18n.TranslatableText;
+import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
+import com.vcp.hessen.kurhessen.core.i18n.TranslationHelper;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
@@ -11,7 +12,7 @@ import java.util.List;
 public class DateTimePickerLocalised extends DateTimePicker {
 
     public DateTimePickerLocalised() {
-        this.setLocale(TranslatableText.Companion.getCurrentLocale());
+        this.setLocale(TranslationHelper.Companion.getCurrentLocale());
 
         DatePicker.DatePickerI18n localisedPicker = new DatePicker.DatePickerI18n();
         localisedPicker.setMonthNames(List.of(

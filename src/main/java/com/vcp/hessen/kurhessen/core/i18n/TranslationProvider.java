@@ -1,4 +1,4 @@
-package com.vcp.hessen.kurhessen.i18n;
+package com.vcp.hessen.kurhessen.core.i18n;
 
 import com.vaadin.flow.i18n.I18NProvider;
 import lombok.extern.slf4j.Slf4j;
@@ -10,7 +10,7 @@ import java.util.*;
 
 @Service
 @Slf4j
-public class TranslationProvider implements I18NProvider {
+class TranslationProvider implements I18NProvider {
 
     public static final String BUNDLE_PREFIX = "translate";
 

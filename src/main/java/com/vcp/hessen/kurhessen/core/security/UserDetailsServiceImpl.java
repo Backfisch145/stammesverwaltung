@@ -1,4 +1,4 @@
-package com.vcp.hessen.kurhessen.security;
+package com.vcp.hessen.kurhessen.core.security;
 
 import com.vcp.hessen.kurhessen.data.User;
 import com.vcp.hessen.kurhessen.data.UserRepository;

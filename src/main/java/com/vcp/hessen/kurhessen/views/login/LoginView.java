@@ -9,7 +9,7 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.internal.RouteUtil;
 import com.vaadin.flow.server.VaadinService;
 import com.vaadin.flow.server.auth.AnonymousAllowed;
-import com.vcp.hessen.kurhessen.security.AuthenticatedUser;
+import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
 
 @AnonymousAllowed
 @PageTitle("Login")

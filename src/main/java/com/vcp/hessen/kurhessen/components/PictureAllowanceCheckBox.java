@@ -7,7 +7,7 @@ import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.dom.Style;
-import com.vcp.hessen.kurhessen.i18n.TranslatableText;
+import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j

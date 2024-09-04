@@ -14,12 +14,11 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
 import com.vcp.hessen.kurhessen.data.Role;
 import com.vcp.hessen.kurhessen.data.User;
-import com.vcp.hessen.kurhessen.data.UserRepository;
-import com.vcp.hessen.kurhessen.data.event.Event;
-import com.vcp.hessen.kurhessen.data.event.EventParticipantRepository;
-import com.vcp.hessen.kurhessen.data.event.EventRepository;
-import com.vcp.hessen.kurhessen.i18n.TranslatableText;
-import com.vcp.hessen.kurhessen.security.AuthenticatedUser;
+import com.vcp.hessen.kurhessen.features.events.data.Event;
+import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
+import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
+import com.vcp.hessen.kurhessen.features.events.EventService;
+import com.vcp.hessen.kurhessen.features.usermanagement.UserService;
 import com.vcp.hessen.kurhessen.views.MainLayout;
 import com.vcp.hessen.kurhessen.views.components.forms.EventForm;
 import jakarta.annotation.security.RolesAllowed;
@@ -38,9 +37,10 @@ public class AddEventView extends Composite<VerticalLayout> implements HasDynami
     private final String EVENT_ID = "eventID";
     public static final String EVENT_ROUTE_TEMPLATE = "events/%s";
 
-    private final EventRepository eventRepository;
+    private final EventService eventService;
+    private final UserService userService;
     private final AuthenticatedUser authenticatedUser;
-    private final EventForm form;
+    private EventForm form;
 
     @Override
     public String getPageTitle() {
@@ -49,15 +49,18 @@ public class AddEventView extends Composite<VerticalLayout> implements HasDynami
 
 
 
-    public AddEventView(AuthenticatedUser authenticatedUser, EventRepository eventRepository, UserRepository userRepository, EventParticipantRepository eventParticipantRepository) {
+    public AddEventView(AuthenticatedUser authenticatedUser, EventService eventService, UserService userService) {
         this.authenticatedUser = authenticatedUser;
-        this.eventRepository = eventRepository;
-        form = new EventForm(userRepository, eventRepository, eventParticipantRepository);
+        this.eventService = eventService;
+        this.userService = userService;
 
-        createGui();
-    }
 
-    public void createGui() {
+        log.info("AddEventView.AddEventView");
+        form = new EventForm(this.userService, event -> {
+            Event e = eventService.update(event);
+            form.setEvent(e);
+        });
+
         getContent().removeAll();
         VerticalLayout layoutColumn2 = new VerticalLayout();
         HorizontalLayout layoutRow2 = new HorizontalLayout();
@@ -81,10 +84,13 @@ public class AddEventView extends Composite<VerticalLayout> implements HasDynami
     }
 
 
+
     @Override
     public void beforeEnter(@NotNull BeforeEnterEvent beforeEvent) {
 
         Optional<String> eventIdStr = beforeEvent.getRouteParameters().get(EVENT_ID);
+        System.out.println("eventIdStr = " + eventIdStr.toString());
+        log.info("eventIdStr = " + eventIdStr.toString());
 
         if (eventIdStr.isEmpty()) {
             return;
@@ -96,7 +102,7 @@ public class AddEventView extends Composite<VerticalLayout> implements HasDynami
             if (!user.hasRole(Role.MODERATOR) && !user.hasRole(Role.ADMIN)) {
                 throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED);
             }
-            form.init(new Event());
+            form.setEvent(new Event());
             return;
         }
 
@@ -108,13 +114,15 @@ public class AddEventView extends Composite<VerticalLayout> implements HasDynami
         }
 
 
-        Optional<Event> event = eventRepository.findById(eventId);
-        if (event.isPresent() && !event.get().isUserAllowedToSee(user)) {
+
+        Optional<Event> eventOptional = eventService.getComplete(eventId);
+        if (eventOptional.isPresent() && !eventOptional.get().isUserAllowedToSee(user)) {
                 throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED);
         }
 
-        log.info("OptionalEvent is present: " + event.isPresent());
-        form.init(event.orElseGet(Event::new));
+
+        log.info("OptionalEvent is present: " + eventOptional.isPresent());
+        form.setEvent(eventOptional.orElseGet(Event::new));
     }
 
 }

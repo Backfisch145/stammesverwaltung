@@ -24,10 +24,10 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import com.vaadin.flow.theme.lumo.LumoUtility;
-import com.vcp.hessen.kurhessen.data.User;
-import com.vcp.hessen.kurhessen.data.event.Event;
-import com.vcp.hessen.kurhessen.i18n.TranslatableText;
-import com.vcp.hessen.kurhessen.services.EventService;
+import com.vcp.hessen.kurhessen.core.i18n.TranslationHelper;
+import com.vcp.hessen.kurhessen.features.events.data.Event;
+import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
+import com.vcp.hessen.kurhessen.features.events.EventService;
 import com.vcp.hessen.kurhessen.views.MainLayout;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.persistence.criteria.*;
@@ -232,7 +232,7 @@ public class EventView extends Div {
         return event -> {
             LocalDateTime ldt = event.getStartingTime();
             if (ldt != null) {
-                DateTimeFormatter usDateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(TranslatableText.Companion.getCurrentLocale());
+                DateTimeFormatter usDateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(TranslationHelper.Companion.getCurrentLocale());
                 return ldt.format(usDateFormatter);
             } else {
                 return "";
@@ -244,7 +244,7 @@ public class EventView extends Div {
         return event -> {
             LocalDateTime ldt = event.getEndingTime();
             if (ldt != null) {
-                DateTimeFormatter usDateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(TranslatableText.Companion.getCurrentLocale());
+                DateTimeFormatter usDateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(TranslationHelper.Companion.getCurrentLocale());
                 return ldt.format(usDateFormatter);
             } else {
                 return "";
@@ -257,7 +257,7 @@ public class EventView extends Div {
         return event -> {
             LocalDateTime ldt = event.getParticipationDeadline();
             if (ldt != null) {
-                DateTimeFormatter usDateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(TranslatableText.Companion.getCurrentLocale());
+                DateTimeFormatter usDateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(TranslationHelper.Companion.getCurrentLocale());
                 return ldt.format(usDateFormatter);
             } else {
                 return "";
@@ -270,7 +270,7 @@ public class EventView extends Div {
         return event -> {
             LocalDateTime ldt = event.getPaymentDeadline();
             if (ldt != null) {
-                DateTimeFormatter usDateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(TranslatableText.Companion.getCurrentLocale());
+                DateTimeFormatter usDateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(TranslationHelper.Companion.getCurrentLocale());
                 return ldt.format(usDateFormatter);
             } else {
                 return "";

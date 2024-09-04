@@ -1,4 +1,4 @@
-package com.vcp.hessen.kurhessen.data.event;
+package com.vcp.hessen.kurhessen.features.events.data;
 
 import com.vcp.hessen.kurhessen.data.User;
 import jakarta.persistence.*;
@@ -12,14 +12,16 @@ import java.util.Objects;
 @Slf4j
 @Getter
 @Entity
-@Table(name = "event_participants")
+@Table(name = "event_participants",uniqueConstraints=@UniqueConstraint(columnNames= {"user_id","event_id"}))
 @AllArgsConstructor
 @NoArgsConstructor
+
 public class EventParticipant {
 
     @Id
     @GeneratedValue()
     private Long id;
+
     @Enumerated(EnumType.STRING)
     private EventParticipationStatus status;
     @NotNull
@@ -27,13 +29,13 @@ public class EventParticipant {
     private EventRole eventRole;
 
     @NotNull
-    @OneToOne
+    @ManyToOne(optional = false)
+    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)
     private User user;
 
-    @ManyToOne(cascade = CascadeType.ALL, optional = false)
-    @JoinColumn(name = "event_id", nullable = false)
+    @ManyToOne(optional = false, cascade = CascadeType.ALL)
+    @JoinColumn(name = "event_id", referencedColumnName = "id", nullable = false)
     private Event event;
-
 
     public EventParticipant(EventParticipationStatus status, EventRole eventRole, User user, Event event) {
         this.status = status;
