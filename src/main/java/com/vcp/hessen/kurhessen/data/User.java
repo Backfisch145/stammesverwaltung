@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Email;
 import lombok.*;
 import org.hibernate.proxy.HibernateProxy;
 
+import javax.annotation.Nullable;
 import java.time.LocalDate;
 import java.util.Locale;
 import java.util.Objects;
@@ -72,11 +73,28 @@ public class User {
     private String eatingHabits;
 
     private Boolean picturesAllowed;
+    private Boolean swimmingInGroupOfThreeAllowed;
+    private Boolean moveFreelyInGroupOfThreeAllowed;
+
 
 
     @OneToMany(mappedBy = "user")
     @ToString.Exclude
     private Set<EventParticipant> participants;
+
+    @ToString.Exclude
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "user_emergency_contact_id")
+    private UserEmergencyContact userEmergencyContact;
+
+    @Nullable
+    public UserEmergencyContact getUserEmergencyContact() {
+        return userEmergencyContact;
+    }
+
+    public void setUserEmergencyContact(UserEmergencyContact userEmergencyContact) {
+        this.userEmergencyContact = userEmergencyContact;
+    }
 
     public String getDisplayName() {
        return firstName + " " + lastName;

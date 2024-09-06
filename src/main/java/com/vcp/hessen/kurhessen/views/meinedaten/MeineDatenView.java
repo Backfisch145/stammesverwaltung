@@ -84,6 +84,8 @@ public class MeineDatenView extends Composite<VerticalLayout> {
         layoutColumn2.add(form.getIntolerances());
         layoutColumn2.add(form.getEatingHabits());
         layoutColumn2.add(new Hr());
+        layoutColumn2.add(form.getEmergencyContact());
+        layoutColumn2.add(new Hr());
         layoutColumn2.add(form.getPicturesAllowed());
         layoutColumn2.add(new Hr());
         layoutColumn2.add(layoutRow);
