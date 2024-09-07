@@ -5,10 +5,14 @@ import com.vcp.hessen.kurhessen.features.events.data.EventParticipant;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import lombok.*;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.proxy.HibernateProxy;
 
 import javax.annotation.Nullable;
+import java.time.Duration;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
@@ -18,6 +22,7 @@ import java.util.Set;
 @ToString
 @AllArgsConstructor
 @NoArgsConstructor
+@Slf4j
 public class User {
 
     @Id
@@ -120,6 +125,53 @@ public class User {
 
     public boolean hasRole(Role role) {
         return this.roles.contains(role);
+    }
+
+    private long getDaysTillNextLevel() {
+        if (this.dateOfBirth == null) {
+            return -1;
+        }
+
+        if (this.level == null) {
+            return -1;
+        }
+
+        return ChronoUnit.DAYS.between(this.dateOfBirth, LocalDateTime.now());
+    }
+
+    public String getUntilNextLevelString() {
+
+        long ageInDays = getDaysTillNextLevel();
+        if (ageInDays == -1) {
+            return "missing Info";
+        }
+
+        if (this.level == null) {
+            return "";
+        }
+
+        long maxAge = this.level.getMaxAge() * 365L;
+
+        if (maxAge < ageInDays) {
+            long daysSinceLevel = ageInDays - maxAge;
+            if (daysSinceLevel > 365) {
+                return "vor " + daysSinceLevel/365 + " years";
+            }
+            if (daysSinceLevel > 31) {
+                return "vor " + daysSinceLevel/31 + " month";
+            }
+
+            return "vor " + daysSinceLevel + " days";
+        } else {
+            long daysSinceLevel = ageInDays - maxAge;
+            if (daysSinceLevel < -365) {
+                return "in " + daysSinceLevel/365 + " years";
+            }
+            if (daysSinceLevel < -31) {
+                return "in " + daysSinceLevel/31 + " month";
+            }
+            return "in " + daysSinceLevel + " days";
+        }
     }
 
     @Override

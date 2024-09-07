@@ -26,7 +26,7 @@ public class PictureAllowanceCheckBox extends VerticalLayout {
         add(paragraph);
 
         checkbox = new Checkbox();
-        checkbox.setLabel(new TranslatableText("MarkConsentForUpcomingRegistrations").translate());
+        checkbox.setLabel(new TranslatableText("Consent").translate());
         checkbox.setValue(DEFAULT_STATE);
         add(checkbox);
     }

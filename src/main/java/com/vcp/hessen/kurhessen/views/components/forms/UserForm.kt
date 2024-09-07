@@ -1,8 +1,9 @@
 package com.vcp.hessen.kurhessen.views.components.forms
 
+import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.combobox.ComboBox
 import com.vaadin.flow.component.datepicker.DatePicker
-import com.vaadin.flow.component.html.Div
+import com.vaadin.flow.component.formlayout.FormLayout
 import com.vaadin.flow.component.textfield.EmailField
 import com.vaadin.flow.component.textfield.IntegerField
 import com.vaadin.flow.component.textfield.TextArea
@@ -29,7 +30,7 @@ public class UserForm(private val authenticatedUser: AuthenticatedUser) {
     val intolerances : TextArea = intolerancesElement()
     val eatingHabits : TextArea = eatingHabitsElement()
     val picturesAllowed : PictureAllowanceCheckBox = picturesAllowedElement()
-    val emergencyContact : Div = getEmergencyContactElement()
+    //val emergencyContact : Component = getEmergencyContactElement()
 
 
     fun isValid(): Boolean {
@@ -181,17 +182,14 @@ public class UserForm(private val authenticatedUser: AuthenticatedUser) {
         }
         return pictureAllowance
     }
-    fun getEmergencyContactElement(): Div {
-        val root = Div()
-        root.setWidthFull()
+    fun getEmergencyContactElement(): Component {
 
-        val title =  com.vaadin.flow.component.html.H4(TranslatableText("EmergencyContact").translate())
-        title.setWidthFull()
-        root.add(title)
+        val root = FormLayout()
+        root.setWidth("100%")
 
         val nameField = TextField()
         nameField.label = TranslatableText("Name").translate()
-        nameField.width = "400px"
+        nameField.width = "min-content"
         authenticatedUser.get().ifPresent { u: User ->
             nameField.value = u.userEmergencyContact?.name ?: ""
         }
@@ -199,7 +197,7 @@ public class UserForm(private val authenticatedUser: AuthenticatedUser) {
 
         val addressField = TextField()
         addressField.label = TranslatableText("Address").translate()
-        addressField.width = "400px"
+        addressField.width = "min-content"
         authenticatedUser.get().ifPresent { u: User ->
             addressField.value = u.userEmergencyContact?.address ?: ""
         }

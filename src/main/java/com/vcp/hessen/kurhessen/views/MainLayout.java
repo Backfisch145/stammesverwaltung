@@ -17,6 +17,7 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vcp.hessen.kurhessen.data.User;
 import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
 import com.vcp.hessen.kurhessen.features.events.EventConfig;
+import com.vcp.hessen.kurhessen.features.inventory.InventoryConfig;
 import com.vcp.hessen.kurhessen.views.about.AboutView;
 import com.vcp.hessen.kurhessen.views.meinedaten.MeineDatenView;
 import com.vcp.hessen.kurhessen.views.mitglieder.MitgliederView;
@@ -39,11 +40,13 @@ public class MainLayout extends AppLayout {
     private final AccessAnnotationChecker accessChecker;
 
     private final EventConfig eventConfig;
+    private final InventoryConfig inventoryConfig;
 
-    public MainLayout(AuthenticatedUser authenticatedUser, AccessAnnotationChecker accessChecker, EventConfig eventConfig) {
+    public MainLayout(AuthenticatedUser authenticatedUser, AccessAnnotationChecker accessChecker, EventConfig eventConfig, InventoryConfig inventoryConfig) {
         this.authenticatedUser = authenticatedUser;
         this.accessChecker = accessChecker;
         this.eventConfig = eventConfig;
+        this.inventoryConfig = inventoryConfig;
 
         setPrimarySection(Section.DRAWER);
         addDrawerContent();
@@ -91,6 +94,12 @@ public class MainLayout extends AppLayout {
             }
         }
 
+        if (inventoryConfig.isEnabled()) {
+            if (accessChecker.hasAccess(EventView.class)) {
+                nav.addItem(
+                        new SideNavItem("Inventar", EventView.class, LineAwesomeIcon.BOX_SOLID .create()));
+            }
+        }
 
         if (accessChecker.hasAccess(AboutView.class)) {
             nav.addItem(new SideNavItem("About", AboutView.class, LineAwesomeIcon.BOOK_OPEN_SOLID.create()));
@@ -108,7 +117,7 @@ public class MainLayout extends AppLayout {
             User user = maybeUser.get();
 
             Avatar avatar = new Avatar(user.getDisplayName());
-            StreamResource resource = new StreamResource("profile-pic",
+             StreamResource resource = new StreamResource("profile-pic",
                     () -> new ByteArrayInputStream(user.getProfilePicture()));
             avatar.setImageResource(resource);
             avatar.setThemeName("xsmall");

@@ -6,6 +6,7 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.Uses;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.notification.Notification;
@@ -84,7 +85,9 @@ public class MeineDatenView extends Composite<VerticalLayout> {
         layoutColumn2.add(form.getIntolerances());
         layoutColumn2.add(form.getEatingHabits());
         layoutColumn2.add(new Hr());
-        layoutColumn2.add(form.getEmergencyContact());
+//        H4 title =  new H4(new TranslatableText("EmergencyContact").translate());
+//        layoutColumn2.add(title);
+//        layoutColumn2.add(form.getEmergencyContact());
         layoutColumn2.add(new Hr());
         layoutColumn2.add(form.getPicturesAllowed());
         layoutColumn2.add(new Hr());

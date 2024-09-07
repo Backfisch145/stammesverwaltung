@@ -246,11 +246,15 @@ public class MitgliederView extends Div {
         grid.addColumn(dateOfBirthRenderer(), "dateOfBirth")
                 .setHeader(new TranslatableText("Birthday").translate())
                 .setAutoWidth(true);
+        grid.addColumn(genderRenderer(), "gender")
+                .setHeader(new TranslatableText("Gender").translate())
+                .setAutoWidth(true);
         grid.addColumn(levelRenderer(), "level")
                 .setHeader(new TranslatableText("Level").translate())
                 .setAutoWidth(true);
-        grid.addColumn(genderRenderer(), "gender")
-                .setHeader(new TranslatableText("Gender").translate())
+
+        grid.addColumn(nextLevelRenderer(), "nextLevel")
+                .setHeader(new TranslatableText("NextLevel").translate())
                 .setAutoWidth(true);
 
         grid.setItems(query -> userService.list(
@@ -269,6 +273,10 @@ public class MitgliederView extends Div {
     @NotNull
     private static ValueProvider<User, String> levelRenderer() {
         return user -> new TranslatableText(user.getLevel().name()).translate();
+    }
+    @NotNull
+    private static ValueProvider<User, String> nextLevelRenderer() {
+        return User::getUntilNextLevelString;
     }
     @NotNull
     private static ValueProvider<User, String> dateOfBirthRenderer() {
