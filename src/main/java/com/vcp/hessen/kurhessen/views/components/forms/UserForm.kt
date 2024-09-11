@@ -177,7 +177,7 @@ public class UserForm(private val authenticatedUser: AuthenticatedUser) {
         val pictureAllowance = PictureAllowanceCheckBox()
         authenticatedUser.get().ifPresent { u: User ->
             pictureAllowance.setValue(
-                u.picturesAllowed
+                u.isPicturesAllowed
             )
         }
         return pictureAllowance

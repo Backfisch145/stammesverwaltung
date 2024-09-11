@@ -20,7 +20,7 @@ import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
 import com.vcp.hessen.kurhessen.features.events.EventService;
 import com.vcp.hessen.kurhessen.features.usermanagement.UserService;
 import com.vcp.hessen.kurhessen.views.MainLayout;
-import com.vcp.hessen.kurhessen.views.components.forms.EventForm;
+import com.vcp.hessen.kurhessen.features.events.EventForm;
 import jakarta.annotation.security.RolesAllowed;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;

@@ -1,4 +1,4 @@
-package com.vcp.hessen.kurhessen.views.about;
+package com.vcp.hessen.kurhessen.core.views.about;
 
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.dependency.Uses;

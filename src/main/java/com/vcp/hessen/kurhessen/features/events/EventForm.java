@@ -1,4 +1,4 @@
-package com.vcp.hessen.kurhessen.views.components.forms;
+package com.vcp.hessen.kurhessen.features.events;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;

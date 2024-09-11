@@ -1,6 +1,7 @@
 package com.vcp.hessen.kurhessen.data;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
 import com.vcp.hessen.kurhessen.features.events.data.EventParticipant;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
@@ -13,6 +14,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.HashSet;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
@@ -23,6 +25,8 @@ import java.util.Set;
 @AllArgsConstructor
 @NoArgsConstructor
 @Slf4j
+@Getter
+@Setter
 public class User {
 
     @Id
@@ -54,6 +58,10 @@ public class User {
     @Column
     private LocalDate dateOfBirth;
 
+
+    @Column
+    private String address;
+
     @Column
     @Enumerated(EnumType.STRING)
     private Level level;
@@ -67,7 +75,7 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     @ElementCollection(fetch = FetchType.EAGER)
-    private Set<Role> roles;
+    private Set<Role> roles = new HashSet<>();
 
     @Lob
     @Column(length = 1000000)
@@ -77,9 +85,12 @@ public class User {
 
     private String eatingHabits;
 
-    private Boolean picturesAllowed;
-    private Boolean swimmingInGroupOfThreeAllowed;
-    private Boolean moveFreelyInGroupOfThreeAllowed;
+    @Column(columnDefinition = "false")
+    private boolean picturesAllowed = false;
+    @Column(columnDefinition = "false")
+    private boolean swimmingInGroupOfThreeAllowed = false;
+    @Column(columnDefinition = "false")
+    private boolean moveFreelyInGroupOfThreeAllowed = false;
 
 
 
@@ -123,6 +134,19 @@ public class User {
         this.participants = user.participants;
     }
 
+    public User(Integer membershipId, String username, String firstName, String lastName, String email, String phone, String address, LocalDate dateOfBirth, Level level, Gender gender) {
+        this.membershipId = membershipId;
+        this.username = username;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.email = email;
+        this.phone = phone;
+        this.address = address;
+        this.dateOfBirth = dateOfBirth;
+        this.level = level;
+        this.gender = gender;
+    }
+
     public boolean hasRole(Role role) {
         return this.roles.contains(role);
     }
@@ -143,7 +167,7 @@ public class User {
 
         long ageInDays = getDaysTillNextLevel();
         if (ageInDays == -1) {
-            return "missing Info";
+            return new TranslatableText("Unknown").translate();
         }
 
         if (this.level == null) {
@@ -188,149 +212,5 @@ public class User {
     @Override
     public final int hashCode() {
         return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass().hashCode() : getClass().hashCode();
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public int getVersion() {
-        return version;
-    }
-
-    public void setVersion(int version) {
-        this.version = version;
-    }
-
-    public Integer getMembershipId() {
-        return membershipId;
-    }
-
-    public void setMembershipId(Integer membershipId) {
-        this.membershipId = membershipId;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getPhone() {
-        return phone;
-    }
-
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-
-    public LocalDate getDateOfBirth() {
-        return dateOfBirth;
-    }
-
-    public void setDateOfBirth(LocalDate dateOfBirth) {
-        this.dateOfBirth = dateOfBirth;
-    }
-
-    public Level getLevel() {
-        return level;
-    }
-
-    public void setLevel(Level level) {
-        this.level = level;
-    }
-
-    public Gender getGender() {
-        return gender;
-    }
-
-    public void setGender(Gender gender) {
-        this.gender = gender;
-    }
-
-    public String getHashedPassword() {
-        return hashedPassword;
-    }
-
-    public void setHashedPassword(String hashedPassword) {
-        this.hashedPassword = hashedPassword;
-    }
-
-    public Set<Role> getRoles() {
-        return roles;
-    }
-
-    public void setRoles(Set<Role> roles) {
-        this.roles = roles;
-    }
-
-    public byte[] getProfilePicture() {
-        return profilePicture;
-    }
-
-    public void setProfilePicture(byte[] profilePicture) {
-        this.profilePicture = profilePicture;
-    }
-
-    public String getIntolerances() {
-        return intolerances;
-    }
-
-    public void setIntolerances(String intolerances) {
-        this.intolerances = intolerances;
-    }
-
-    public String getEatingHabits() {
-        return eatingHabits;
-    }
-
-    public void setEatingHabits(String eatingHabits) {
-        this.eatingHabits = eatingHabits;
-    }
-
-    public Boolean getPicturesAllowed() {
-        return picturesAllowed;
-    }
-
-    public void setPicturesAllowed(Boolean picturesAllowed) {
-        this.picturesAllowed = picturesAllowed;
-    }
-
-    public Set<EventParticipant> getParticipants() {
-        return participants;
-    }
-
-    public void setParticipants(Set<EventParticipant> participants) {
-        this.participants = participants;
     }
 }

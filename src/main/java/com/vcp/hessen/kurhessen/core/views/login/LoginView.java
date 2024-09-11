@@ -1,4 +1,4 @@
-package com.vcp.hessen.kurhessen.views.login;
+package com.vcp.hessen.kurhessen.core.views.login;
 
 import com.vaadin.flow.component.login.LoginI18n;
 import com.vaadin.flow.component.login.LoginOverlay;

@@ -2,7 +2,7 @@ package com.vcp.hessen.kurhessen.core.security;
 
 import com.vaadin.flow.spring.security.VaadinWebSecurity;
 import com.vcp.hessen.kurhessen.features.events.EventConfig;
-import com.vcp.hessen.kurhessen.views.login.LoginView;
+import com.vcp.hessen.kurhessen.core.views.login.LoginView;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

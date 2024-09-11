@@ -123,6 +123,12 @@
             <artifactId>kotlin-logging-jvm</artifactId>
             <version>5.1.0</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>4.1.1</version>
+        </dependency>
     </dependencies>
 
     <build>
@@ -202,6 +208,32 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.jetbrains.kotlin</groupId>
+                <artifactId>kotlin-maven-plugin</artifactId>
+                <version>${kotlin.version}</version>
+                <configuration>
+                    <compilerPlugins>
+                        <plugin>lombok</plugin>
+                    </compilerPlugins>
+<!--                    <pluginOptions>-->
+<!--                        <option>lombok:config=${project.basedir}/lombok.config</option>-->
+<!--                    </pluginOptions>-->
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.jetbrains.kotlin</groupId>
+                        <artifactId>kotlin-maven-lombok</artifactId>
+                        <version>${kotlin.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.projectlombok</groupId>
+                        <artifactId>lombok</artifactId>
+                        <version>1.18.34</version>
+                        <scope>provided</scope>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>
