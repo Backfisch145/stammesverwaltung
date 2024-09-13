@@ -5,24 +5,23 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
+import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
+import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
 import com.vcp.hessen.kurhessen.core.util.Callback;
 import com.vcp.hessen.kurhessen.data.Gender;
+import com.vcp.hessen.kurhessen.data.Level;
 import com.vcp.hessen.kurhessen.data.User;
 import com.vcp.hessen.kurhessen.features.usermanagement.UserService;
 
 
-public class MemberDetailsForm extends VerticalLayout {
-    private UserService userService;
-
+public class MemberDetailsForm extends FormLayout {
     private final BeanValidationBinder<User> binder = new BeanValidationBinder<>(User.class);
-
-    private Grid<User> grid;
     private TextField membershipId;
     private TextField username;
     private TextField firstName;
@@ -32,22 +31,15 @@ public class MemberDetailsForm extends VerticalLayout {
     private DatePicker dateOfBirth;
     private TextField address;
     private ComboBox<Gender> gender = new ComboBox<>("Gender", Gender.getEntries());
-
-    private final Button cancel = new Button("Cancel");
-    private final Button save = new Button("Save");
-    private final Button delete = new Button("Delete");
+    private ComboBox<Level> level = new ComboBox<>("Level", Level.getEntries());
+    private final Button cancel = new Button(new TranslatableText("Cencel").translate());
+    private final Button save = new Button(new TranslatableText("Save").translate());
+    private final Button delete = new Button(new TranslatableText("Delete").translate());
     private final Callback<MemberDetailsFormEvent> actionCallback;
 
     public MemberDetailsForm(Callback<MemberDetailsFormEvent> onAction) {
 
         this.actionCallback = onAction;
-
-        Div editorLayoutDiv = new Div();
-        editorLayoutDiv.setClassName("editor-layout");
-
-        Div editorDiv = new Div();
-        editorDiv.setClassName("editor");
-        editorLayoutDiv.add(editorDiv);
         membershipId = new TextField("Membership");
         username = new TextField("username");
         firstName = new TextField("First Name");
@@ -57,10 +49,10 @@ public class MemberDetailsForm extends VerticalLayout {
         dateOfBirth = new DatePicker("Date Of Birth");
         address = new TextField("Addreess");
         gender.setItemLabelGenerator(Gender::getTitleTranslated);
+        level.setItemLabelGenerator(Level::getTitleTranslated);
 
         binder.bindInstanceFields(this);
-
-        this.add(membershipId, username, firstName, lastName, email, phone, dateOfBirth, address, gender, createButtonLayout());
+        this.add(membershipId, username, firstName, lastName, email, phone, dateOfBirth, address, gender, level, createButtonLayout());
     }
 
     public void setUser(User value) {

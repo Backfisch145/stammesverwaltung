@@ -388,8 +388,6 @@ public class MitgliederView extends Div {
     }
 
     private void editContact(User value) {
-
-
         if (value == null) {
             closeEditor();
         } else {
