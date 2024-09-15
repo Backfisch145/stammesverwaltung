@@ -103,6 +103,10 @@ public class User {
     @JoinColumn(name = "user_emergency_contact_id")
     private UserEmergencyContact userEmergencyContact;
 
+    @ManyToOne(cascade = {CascadeType.ALL})
+    @JoinColumn
+    private Tribe tribe;
+
     @Nullable
     public UserEmergencyContact getUserEmergencyContact() {
         return userEmergencyContact;

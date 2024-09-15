@@ -32,7 +32,7 @@ public class MemberDetailsForm extends FormLayout {
     private TextField address;
     private ComboBox<Gender> gender = new ComboBox<>("Gender", Gender.getEntries());
     private ComboBox<Level> level = new ComboBox<>("Level", Level.getEntries());
-    private final Button cancel = new Button(new TranslatableText("Cencel").translate());
+    private final Button cancel = new Button(new TranslatableText("Cancel").translate());
     private final Button save = new Button(new TranslatableText("Save").translate());
     private final Button delete = new Button(new TranslatableText("Delete").translate());
     private final Callback<MemberDetailsFormEvent> actionCallback;

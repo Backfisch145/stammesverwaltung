@@ -1,9 +1,7 @@
 package com.vcp.hessen.kurhessen.features.usermanagement;
 
 import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
-import com.vcp.hessen.kurhessen.data.Gender;
-import com.vcp.hessen.kurhessen.data.User;
-import com.vcp.hessen.kurhessen.data.UserRepository;
+import com.vcp.hessen.kurhessen.data.*;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,10 +13,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
@@ -35,20 +30,32 @@ public class UserService {
 
     private final AuthenticatedUser user;
     private final UserRepository repository;
+    private final TribeRepository repositoryTribe;
     private final UsermanagementConfig usermanagementConfig;
 
     private final SimpleDateFormat gruenDateFormat;
 
-    public UserService(AuthenticatedUser user, UserRepository repository, UsermanagementConfig usermanagementConfig) {
+    public UserService(AuthenticatedUser user, UserRepository repository, TribeRepository repositoryTribe, UsermanagementConfig usermanagementConfig, TribeRepository tribeRepository) {
         this.user = user;
         this.repository = repository;
+        this.repositoryTribe = repositoryTribe;
         this.usermanagementConfig = usermanagementConfig;
 
         gruenDateFormat = new SimpleDateFormat(usermanagementConfig.getGruenDateFormat());
     }
 
     public List<User> getAll() {
-        return repository.findAll();
+        if (user.get().isPresent()) {
+            User u = user.get().get();
+
+            if (u.hasRole(Role.ADMIN)) {
+                return repository.findAll();
+            } if (u.hasRole(Role.MODERATOR)) {
+                return repository.findAllByTribe(user.get().get().getTribe());
+            }
+        }
+        return new ArrayList<>();
+
     }
 
     public Optional<User> get(Long id) {
@@ -101,6 +108,9 @@ public class UserService {
 
             ArrayList<User> users = new ArrayList<>();
 
+
+            HashMap<Tribe, ArrayList<User>> tribeHashMap = new HashMap<>();
+
             while (iterator.hasNext()) {
 
                 Row currentRow = iterator.next();
@@ -108,9 +118,9 @@ public class UserService {
                 int correctedRow = currentRow.getRowNum()+1;
 
 
-//                Cell stammIdCell = currentRow.getCell(0);
+                Cell stammIdCell = currentRow.getCell(0);
 //                Cell stammCell = currentRow.getCell(1);
-                Cell menberNrCell = currentRow.getCell(2);
+                Cell memberNrCell = currentRow.getCell(2);
                 Cell firstNameCell = currentRow.getCell(3);
                 Cell lastNameCell = currentRow.getCell(4);
 //                Cell additionalCell = currentRow.getCell(5);
@@ -125,6 +135,15 @@ public class UserService {
                 Cell joinDateCell = currentRow.getCell(14);
                 Cell leaveDateCell = currentRow.getCell(15);
                 Cell sexCell = currentRow.getCell(16);
+
+
+                Long stammesId = null;
+                try {
+                    stammesId = (long) stammIdCell.getNumericCellValue();
+                } catch (Exception e) {
+                    log.error("importGruenFile: could not get TribeId from File");
+                    return "Could not get TribeId from File";
+                }
 
                 Gender gender = null;
                 try {
@@ -160,7 +179,6 @@ public class UserService {
                         log.debug("Row " + correctedRow + " could not be processed!", e);
                     }
                 }
-
 
                 LocalDate localDateBirthday = null;
                 try {
@@ -198,10 +216,26 @@ public class UserService {
                     log.debug("Row " + correctedRow + " could not be processed!", e);
                 }
 
+                Tribe t = null;
+
+                try {
+                    if (!tribeHashMap.containsKey(stammesId)) {
+                        t = repositoryTribe.findById(stammesId).orElseGet(null);
+
+                        log.info("importGruenFile: t = " + t.getId() + " " + t.getName());
+
+                        tribeHashMap.put(t, new ArrayList<>());
+                    }
+                } catch (Exception e) {
+                    log.warn("Row " + correctedRow + " could not find matching Tribe", e);
+                }
+
+
+
 
                 User newUser = new User(
-                        (int) menberNrCell.getNumericCellValue(),
-                        firstNameCell.getStringCellValue().trim() + "." + lastNameCell.getStringCellValue().trim(),
+                        (int) memberNrCell.getNumericCellValue(),
+                        firstNameCell.getStringCellValue().trim().toLowerCase() + "." + lastNameCell.getStringCellValue().trim().toLowerCase(),
                         firstNameCell.getStringCellValue().trim(),
                         lastNameCell.getStringCellValue().trim(),
                         email,
@@ -212,25 +246,25 @@ public class UserService {
                         gender
                 );
 
-                users.add(newUser);
                 log.debug("importGruenFile: User [" + newUser.getUsername() + "] was red from row " + correctedRow);
+
+                if (newUser.getMembershipId() == null) {
+                    tribeHashMap.get(t).add(newUser);
+                } else if (repository.findByMembershipId(newUser.getMembershipId()).isEmpty()) {
+                    log.info("importGruenFile: User [" + newUser.getUsername() + "] will be added to the Database");
+                    tribeHashMap.get(t).add(newUser);
+                }
+
+
             }
 
-            List<User> newUsers = users.stream().filter(user1 -> {
-                if (user1.getMembershipId() == null) {
-                    return true;
+            for (Tribe tribe : tribeHashMap.keySet()) {
+                for (User user1 : tribeHashMap.get(tribe)) {
+                    User u = repository.save(user1);
+                    u.setTribe(tribe);
+                    repository.save(u);
                 }
-                if (repository.findByMembershipId(user1.getMembershipId()).isEmpty()) {
-                    log.info("importGruenFile: User [" + user1.getUsername() + "] will be added to the Database");
-                    return true;
-                }
-                return false;
-
-            }).toList();
-
-            repository.saveAll(newUsers);
-
-
+            }
         } catch (FileNotFoundException e) {
             log.error("The uploaded File could not be found!", e);
             errorString.append("The uploaded File could not be found!");

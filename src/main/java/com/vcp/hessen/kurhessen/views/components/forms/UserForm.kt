@@ -120,7 +120,7 @@ public class UserForm(private val authenticatedUser: AuthenticatedUser) {
         emailField.label = TranslatableText("Email").translate()
         emailField.width = "min-content"
         authenticatedUser.get().ifPresent { u: User ->
-            emailField.value = u.email
+            emailField.value = u.email?:""
         }
         emailField.isRequired = true
         return emailField
