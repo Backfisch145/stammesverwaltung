@@ -385,28 +385,28 @@ public final class EventForm extends FormLayout {
     }
 
     private DatePicker startingTimeElement() {
-        DatePickerLocalised datePicker = new DatePickerLocalised("From");
+        DatePickerLocalised datePicker = new DatePickerLocalised(new TranslatableText("From").translate());
         datePicker.setMin(LocalDate.now());
         datePicker.setLocale(TranslationHelper.Companion.getCurrentLocale());
         return datePicker;
     }
 
     private DatePicker endingTimeElement() {
-        DatePickerLocalised datePicker = new DatePickerLocalised("To");
+        DatePickerLocalised datePicker = new DatePickerLocalised(new TranslatableText("To").translate());
         datePicker.setMin(LocalDate.now());
         datePicker.setLocale(TranslationHelper.Companion.getCurrentLocale());
         return datePicker;
     }
 
     private DatePicker participationDeadlineElement() {
-        DatePickerLocalised datePicker = new DatePickerLocalised("DeadlineParticipation");
+        DatePickerLocalised datePicker = new DatePickerLocalised(new TranslatableText("DeadlineParticipation").translate());
         datePicker.setMin(LocalDate.now());
         datePicker.setLocale(TranslationHelper.Companion.getCurrentLocale());
         return datePicker;
     }
 
     private DatePicker paymentDeadlineElement() {
-        DatePickerLocalised datePicker = new DatePickerLocalised("PaymentUntil");
+        DatePickerLocalised datePicker = new DatePickerLocalised(new TranslatableText("PaymentUntil").translate());
         datePicker.setMin(LocalDate.now());
         datePicker.setLocale(TranslationHelper.Companion.getCurrentLocale());
         return datePicker;

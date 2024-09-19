@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.MissingResourceException;
 
 @Slf4j
 public class DatePickerLocalised extends DatePicker {
@@ -15,7 +16,7 @@ public class DatePickerLocalised extends DatePicker {
 
     public DatePickerLocalised(String title) {
         this.title = title;
-        this.setLabel(new TranslatableText(this.title).translate());
+        this.setLabel(this.title);
         this.setLocale(TranslationHelper.Companion.getCurrentLocale());
 
         DatePicker.DatePickerI18n localisedPicker = new DatePicker.DatePickerI18n();

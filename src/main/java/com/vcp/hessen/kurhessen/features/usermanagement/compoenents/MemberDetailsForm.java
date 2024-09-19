@@ -10,6 +10,8 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.textfield.IntegerField;
+import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
@@ -18,11 +20,12 @@ import com.vcp.hessen.kurhessen.data.Gender;
 import com.vcp.hessen.kurhessen.data.Level;
 import com.vcp.hessen.kurhessen.data.User;
 import com.vcp.hessen.kurhessen.features.usermanagement.UserService;
+import com.vcp.hessen.kurhessen.views.components.DatePickerLocalised;
 
 
 public class MemberDetailsForm extends FormLayout {
     private final BeanValidationBinder<User> binder = new BeanValidationBinder<>(User.class);
-    private TextField membershipId;
+    private IntegerField membershipId;
     private TextField username;
     private TextField firstName;
     private TextField lastName;
@@ -30,8 +33,8 @@ public class MemberDetailsForm extends FormLayout {
     private TextField phone;
     private DatePicker dateOfBirth;
     private TextField address;
-    private ComboBox<Gender> gender = new ComboBox<>("Gender", Gender.getEntries());
-    private ComboBox<Level> level = new ComboBox<>("Level", Level.getEntries());
+    private ComboBox<Gender> gender = new ComboBox<>(new TranslatableText("Gender").translate(), Gender.getEntries());
+    private ComboBox<Level> level = new ComboBox<>(new TranslatableText("Level").translate(), Level.getEntries());
     private final Button cancel = new Button(new TranslatableText("Cancel").translate());
     private final Button save = new Button(new TranslatableText("Save").translate());
     private final Button delete = new Button(new TranslatableText("Delete").translate());
@@ -40,14 +43,14 @@ public class MemberDetailsForm extends FormLayout {
     public MemberDetailsForm(Callback<MemberDetailsFormEvent> onAction) {
 
         this.actionCallback = onAction;
-        membershipId = new TextField("Membership");
-        username = new TextField("username");
-        firstName = new TextField("First Name");
-        lastName = new TextField("Last Name");
-        email = new TextField("Email");
-        phone = new TextField("Phone");
-        dateOfBirth = new DatePicker("Date Of Birth");
-        address = new TextField("Addreess");
+        membershipId = new IntegerField(new TranslatableText("MembershipNumber").translate());
+        username = new TextField(new TranslatableText("Username").translate());
+        firstName = new TextField(new TranslatableText("FirstName").translate());
+        lastName = new TextField(new TranslatableText("LastName").translate());
+        email = new TextField(new TranslatableText("Email").translate());
+        phone = new TextField(new TranslatableText("Phone").translate());
+        dateOfBirth = new DatePickerLocalised(new TranslatableText("Birthday").translate());
+        address = new TextField(new TranslatableText("Address").translate());
         gender.setItemLabelGenerator(Gender::getTitleTranslated);
         level.setItemLabelGenerator(Level::getTitleTranslated);
 

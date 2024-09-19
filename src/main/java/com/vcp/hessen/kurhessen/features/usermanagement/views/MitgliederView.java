@@ -372,7 +372,8 @@ public class MitgliederView extends Div {
 
         grid.addColumn(nextLevelRenderer(), "nextLevel")
                 .setHeader(new TranslatableText("NextLevel").translate())
-                .setAutoWidth(true);
+                .setAutoWidth(true)
+                .setSortable(false);
 
         grid.setItems(query -> userService.list(
                 PageRequest.of(query.getPage(), query.getPageSize(), VaadinSpringDataHelpers.toSpringDataSort(query)),

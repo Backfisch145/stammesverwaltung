@@ -21,17 +21,18 @@ public class UserForm(private val authenticatedUser: AuthenticatedUser) {
     val log = KotlinLogging.logger("UserForm")
 
     val memberId : IntegerField = membershipIdElement()
+    val tribeId : TextField = tribeElement()
     val firstName : TextField = firstNameElement()
     val lastName : TextField = lastNameElement()
     val birthday : DatePicker = birthdayElement()
     val gender : ComboBox<Gender> = genderElement()
     val phone : TextField = phoneElement()
     val email : EmailField = emailElement()
+    val address : TextField = addressElement()
     val intolerances : TextArea = intolerancesElement()
     val eatingHabits : TextArea = eatingHabitsElement()
     val picturesAllowed : PictureAllowanceCheckBox = picturesAllowedElement()
-    //val emergencyContact : Component = getEmergencyContactElement()
-
+    val emergencyContact : Component = getEmergencyContactElement()
 
     fun isValid(): Boolean {
         if (memberId.isInvalid) {
@@ -81,6 +82,17 @@ public class UserForm(private val authenticatedUser: AuthenticatedUser) {
         return integerField
     }
 
+    fun tribeElement(): TextField {
+        val textField = TextField()
+        textField.label = TranslatableText("Tribe").translate()
+        textField.width = "400px"
+        textField.isReadOnly = true
+        authenticatedUser.get().ifPresent { u: User ->
+            textField.value = u.tribe.name ?:""
+        }
+        return textField
+    }
+
     fun firstNameElement(): TextField {
         val textField = TextField()
         textField.label = TranslatableText("FirstName").translate()
@@ -115,6 +127,7 @@ public class UserForm(private val authenticatedUser: AuthenticatedUser) {
         return textField
     }
 
+
     fun emailElement(): EmailField {
         val emailField = EmailField()
         emailField.label = TranslatableText("Email").translate()
@@ -126,8 +139,18 @@ public class UserForm(private val authenticatedUser: AuthenticatedUser) {
         return emailField
     }
 
+    fun addressElement(): TextField {
+        val textField = TextField()
+        textField.label = TranslatableText("Address").translate()
+        textField.width = "min-content"
+        authenticatedUser.get().ifPresent { u: User ->
+            textField.value = u.address?:""
+        }
+        return textField
+    }
+
     fun birthdayElement(): DatePicker {
-        val datePicker = DatePickerLocalised("Birthday")
+        val datePicker = DatePickerLocalised(TranslatableText("Birthday").translate())
         authenticatedUser.get().ifPresent { u: User ->
             datePicker.value = u.dateOfBirth
         }
@@ -183,7 +206,6 @@ public class UserForm(private val authenticatedUser: AuthenticatedUser) {
         return pictureAllowance
     }
     fun getEmergencyContactElement(): Component {
-
         val root = FormLayout()
         root.setWidth("100%")
 
@@ -221,4 +243,5 @@ public class UserForm(private val authenticatedUser: AuthenticatedUser) {
 
         return root
     }
+
 }

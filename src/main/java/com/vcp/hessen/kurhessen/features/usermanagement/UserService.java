@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
 
+import com.vcp.hessen.kurhessen.features.usermanagement.exceptions.TribeNotExistsException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -106,8 +107,6 @@ public class UserService {
                 return "Could not read Users from File. The File seems to be empty!";
             }
 
-            ArrayList<User> users = new ArrayList<>();
-
 
             HashMap<Tribe, ArrayList<User>> tribeHashMap = new HashMap<>();
 
@@ -119,7 +118,7 @@ public class UserService {
 
 
                 Cell stammIdCell = currentRow.getCell(0);
-//                Cell stammCell = currentRow.getCell(1);
+                Cell stammCell = currentRow.getCell(1);
                 Cell memberNrCell = currentRow.getCell(2);
                 Cell firstNameCell = currentRow.getCell(3);
                 Cell lastNameCell = currentRow.getCell(4);
@@ -137,7 +136,7 @@ public class UserService {
                 Cell sexCell = currentRow.getCell(16);
 
 
-                Long stammesId = null;
+                Long stammesId;
                 try {
                     stammesId = (long) stammIdCell.getNumericCellValue();
                 } catch (Exception e) {
@@ -220,9 +219,18 @@ public class UserService {
 
                 try {
                     if (!tribeHashMap.containsKey(stammesId)) {
-                        t = repositoryTribe.findById(stammesId).orElseGet(null);
+                        t = repositoryTribe.findById(stammesId).orElse(null);
 
-                        log.info("importGruenFile: t = " + t.getId() + " " + t.getName());
+                        if (t == null) {
+                            String tribeName = stammCell.getStringCellValue();
+
+                            if (tribeName == null || tribeName.isBlank()) {
+                                return "Es wurde kein Stamm mit der Id " + stammesId + " gefunden und konnte nicht anhand des in der Datei hinterlegen Stammesnamens angelegt werden.";
+                            }
+
+                            t = repositoryTribe.save(new Tribe(stammesId, tribeName));
+                            log.info("importGruenFile: Ein noch nicht vorkommender Stamm wurde durch den import hinzugefügt! " + t);
+                        }
 
                         tribeHashMap.put(t, new ArrayList<>());
                     }

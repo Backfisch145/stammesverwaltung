@@ -178,8 +178,11 @@ public class User {
             return "";
         }
 
-        long maxAge = this.level.getMaxAge() * 365L;
+        if (this.level == Level.ERWACHSEN) {
+            return "";
+        }
 
+        long maxAge = this.level.getMaxAge() * 365L;
         if (maxAge < ageInDays) {
             long daysSinceLevel = ageInDays - maxAge;
             if (daysSinceLevel > 365) {
@@ -191,14 +194,14 @@ public class User {
 
             return "vor " + daysSinceLevel + " days";
         } else {
-            long daysSinceLevel = ageInDays - maxAge;
-            if (daysSinceLevel < -365) {
-                return "in " + daysSinceLevel/365 + " years";
+            long daysUntilLevel = maxAge - ageInDays;
+            if (daysUntilLevel > 365) {
+                return "in " + daysUntilLevel/365 + " years";
             }
-            if (daysSinceLevel < -31) {
-                return "in " + daysSinceLevel/31 + " month";
+            if (daysUntilLevel > 31) {
+                return "in " + daysUntilLevel/31 + " month";
             }
-            return "in " + daysSinceLevel + " days";
+            return "in " + daysUntilLevel + " days";
         }
     }
 

@@ -23,10 +23,17 @@ import com.vcp.hessen.kurhessen.views.meinedaten.MeineDatenView;
 import com.vcp.hessen.kurhessen.features.usermanagement.views.MitgliederView;
 import com.vcp.hessen.kurhessen.views.veranstaltungen.EventView;
 import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.Optional;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.vaadin.lineawesome.LineAwesomeIcon;
+
+import static java.awt.SystemColor.text;
 
 /**
  * The main view is a top-level placeholder for other views.
@@ -109,6 +116,14 @@ public class MainLayout extends AppLayout {
         return nav;
     }
 
+    private String getGravatarUrl(String email) {
+        if (email == null) {
+            return null;
+        } else {
+            return "https://www.gravatar.com/avatar/" + DigestUtils.sha256Hex(email);
+        }
+    }
+
     private Footer createFooter() {
         Footer layout = new Footer();
 
@@ -117,9 +132,14 @@ public class MainLayout extends AppLayout {
             User user = maybeUser.get();
 
             Avatar avatar = new Avatar(user.getDisplayName());
-             StreamResource resource = new StreamResource("profile-pic",
-                    () -> new ByteArrayInputStream(user.getProfilePicture()));
-            avatar.setImageResource(resource);
+
+
+
+            avatar.setImage(getGravatarUrl(user.getEmail()));
+
+//             StreamResource resource = new StreamResource("profile-pic",
+//                    () -> new ByteArrayInputStream(user.getProfilePicture()));
+//            avatar.setImageResource(resource);
             avatar.setThemeName("xsmall");
             avatar.getElement().setAttribute("tabindex", "-1");
 
