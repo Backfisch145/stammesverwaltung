@@ -2,8 +2,13 @@ package com.vcp.hessen.kurhessen.core.security;
 
 import com.vcp.hessen.kurhessen.data.User;
 import com.vcp.hessen.kurhessen.data.UserRepository;
+
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+
+import com.vcp.hessen.kurhessen.features.usermanagement.UserService;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -21,10 +26,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         this.userRepository = userRepository;
     }
 
+    @SuppressWarnings("ConstantValue")
     @Override
     @Transactional
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username);
+        User user = userRepository.findByUsername(username.toLowerCase());
         if (user == null) {
             throw new UsernameNotFoundException("No user present with username: " + username);
         } else {
@@ -34,9 +40,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     }
 
     private static List<GrantedAuthority> getAuthorities(User user) {
-        return user.getRoles().stream().map(role -> new SimpleGrantedAuthority("ROLE_" + role))
-                .collect(Collectors.toList());
 
+        return user.getAuthorities();
     }
 
 }

@@ -1,6 +1,6 @@
 package com.vcp.hessen.kurhessen.features.events.data;
 
-import com.vcp.hessen.kurhessen.data.Role;
+import com.vcp.hessen.kurhessen.core.security.Role;
 import com.vcp.hessen.kurhessen.data.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -59,10 +59,6 @@ public class Event {
     }
 
     public boolean isUserAllowedToSee(User user) {
-        if (user.hasRole(Role.ADMIN)) {
-            return true;
-        }
-
         return this.getParticipants().stream()
                 .map(EventParticipant::getUser)
                 .anyMatch(us -> us.getId().equals(user.getId()));

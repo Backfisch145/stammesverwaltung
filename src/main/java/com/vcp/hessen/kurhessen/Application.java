@@ -5,6 +5,8 @@ import com.vaadin.flow.theme.Theme;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import java.util.Locale;
 
@@ -16,6 +18,7 @@ import java.util.Locale;
  *
  */
 @SpringBootApplication
+@EnableScheduling
 @Theme(value = "stammesverwaltung")
 public class Application implements AppShellConfigurator {
 

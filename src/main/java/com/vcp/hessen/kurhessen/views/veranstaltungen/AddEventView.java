@@ -12,7 +12,7 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.HasDynamicTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
-import com.vcp.hessen.kurhessen.data.Role;
+import com.vcp.hessen.kurhessen.core.security.Role;
 import com.vcp.hessen.kurhessen.data.User;
 import com.vcp.hessen.kurhessen.features.events.data.Event;
 import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
@@ -25,15 +25,18 @@ import jakarta.annotation.security.RolesAllowed;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.Optional;
 
 @Slf4j
 @Route(value = "events/:eventID", layout = MainLayout.class)
-@RolesAllowed("USER")
+@PreAuthorize("hasAnyAuthority('EVENT_INSERT', 'EVENT_UPDATE')")
 @Uses(Icon.class)
 public class AddEventView extends Composite<VerticalLayout> implements HasDynamicTitle, BeforeEnterObserver {
+
+
     private final String EVENT_ID = "eventID";
     public static final String EVENT_ROUTE_TEMPLATE = "events/%s";
 
@@ -99,7 +102,7 @@ public class AddEventView extends Composite<VerticalLayout> implements HasDynami
         User user = authenticatedUser.get().orElseThrow(() -> new HttpClientErrorException(HttpStatus.UNAUTHORIZED));
 
         if ("new".equals(eventIdStr.get())) {
-            if (!user.hasRole(Role.MODERATOR) && !user.hasRole(Role.ADMIN)) {
+            if (!user.hasPermission("EVENT_INSERT")) {
                 throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED);
             }
             form.setEvent(new Event());

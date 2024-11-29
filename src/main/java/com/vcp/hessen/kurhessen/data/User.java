@@ -2,22 +2,25 @@ package com.vcp.hessen.kurhessen.data;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
+import com.vcp.hessen.kurhessen.core.security.Permission;
+import com.vcp.hessen.kurhessen.core.security.Role;
 import com.vcp.hessen.kurhessen.features.events.data.EventParticipant;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
-import org.hibernate.proxy.HibernateProxy;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import javax.annotation.Nullable;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashSet;
-import java.util.Locale;
-import java.util.Objects;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Entity
 @Table(name = "users")
@@ -50,6 +53,7 @@ public class User {
 
     @Column
     @Email
+    @Nullable
     private String email;
 
     @Column
@@ -58,6 +62,8 @@ public class User {
     @Column
     private LocalDate dateOfBirth;
 
+    @Column
+    private LocalDate joinDate;
 
     @Column
     private String address;
@@ -68,14 +74,10 @@ public class User {
 
     @Column
     @Enumerated(EnumType.STRING)
-    private Gender gender;
+    private Gender gender = Gender.UNKNOWN;
 
     @JsonIgnore
     private String hashedPassword;
-
-    @Enumerated(EnumType.STRING)
-    @ElementCollection(fetch = FetchType.EAGER)
-    private Set<Role> roles = new HashSet<>();
 
     @Lob
     @Column(length = 1000000)
@@ -92,6 +94,7 @@ public class User {
     @Column(columnDefinition = "false")
     private boolean moveFreelyInGroupOfThreeAllowed = false;
 
+    private LocalDate infoUpdateMailSent = null;
 
 
     @OneToMany(mappedBy = "user")
@@ -103,9 +106,13 @@ public class User {
     @JoinColumn(name = "user_emergency_contact_id")
     private UserEmergencyContact userEmergencyContact;
 
-    @ManyToOne(cascade = {CascadeType.ALL})
+    @ManyToOne(cascade = {CascadeType.DETACH, CascadeType.PERSIST, CascadeType.REFRESH, CascadeType.MERGE})
     @JoinColumn
     private Tribe tribe;
+
+    @ToString.Exclude
+    @OneToMany(mappedBy = "user", orphanRemoval = true, fetch = FetchType.EAGER)
+    private Set<Role> roles = new LinkedHashSet<>();
 
     @Nullable
     public UserEmergencyContact getUserEmergencyContact() {
@@ -129,6 +136,7 @@ public class User {
         this.email = user.email;
         this.phone = user.phone;
         this.dateOfBirth = user.dateOfBirth;
+        this.joinDate = user.joinDate;
         this.level = user.level;
         this.gender = user.gender;
         this.roles = user.roles;
@@ -136,9 +144,10 @@ public class User {
         this.eatingHabits = user.eatingHabits;
         this.picturesAllowed = user.picturesAllowed;
         this.participants = user.participants;
+        this.infoUpdateMailSent = user.infoUpdateMailSent;
     }
 
-    public User(Integer membershipId, String username, String firstName, String lastName, String email, String phone, String address, LocalDate dateOfBirth, Level level, Gender gender) {
+    public User(Integer membershipId, String username, String firstName, String lastName, String email, String phone, String address, LocalDate dateOfBirth, LocalDate joinDate, Level level, Gender gender) {
         this.membershipId = membershipId;
         this.username = username;
         this.firstName = firstName;
@@ -147,12 +156,23 @@ public class User {
         this.phone = phone;
         this.address = address;
         this.dateOfBirth = dateOfBirth;
+        this.joinDate = joinDate;
         this.level = level;
         this.gender = gender;
+        this.infoUpdateMailSent = LocalDate.now();
     }
 
     public boolean hasRole(Role role) {
         return this.roles.contains(role);
+    }
+
+    public boolean hasPermission(String permissionStr) {
+        for (GrantedAuthority authority : getAuthorities()) {
+           if (permissionStr.equals(authority.getAuthority())) {
+               return true;
+           }
+        }
+        return false;
     }
 
     private long getDaysTillNextLevel() {
@@ -205,19 +225,16 @@ public class User {
         }
     }
 
-    @Override
-    public final boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null) return false;
-        Class<?> oEffectiveClass = o instanceof HibernateProxy ? ((HibernateProxy) o).getHibernateLazyInitializer().getPersistentClass() : o.getClass();
-        Class<?> thisEffectiveClass = this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass() : this.getClass();
-        if (thisEffectiveClass != oEffectiveClass) return false;
-        User user = (User) o;
-        return getId() != null && Objects.equals(getId(), user.getId());
-    }
+    public List<GrantedAuthority> getAuthorities() {
+        Set<String> permissions = new HashSet<>();
 
-    @Override
-    public final int hashCode() {
-        return this instanceof HibernateProxy ? ((HibernateProxy) this).getHibernateLazyInitializer().getPersistentClass().hashCode() : getClass().hashCode();
+        for (Role role : this.getRoles()) {
+            for (Permission permission : role.getPermissions()) {
+                permissions.add("ROLE_" + permission.name());
+            }
+        }
+
+        return permissions.stream().map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
     }
 }

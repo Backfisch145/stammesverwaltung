@@ -42,9 +42,11 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @PageTitle("Veranstaltungen")
 @Route(value = "events", layout = MainLayout.class)
+@PreAuthorize("has")
 @RolesAllowed("USER")
 @Uses(Icon.class)
 public class EventView extends Div {

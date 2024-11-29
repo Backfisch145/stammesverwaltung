@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Überprüfung Ihrer hinterlegten Daten</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            padding: 20px;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #007BFF;
+        }
+        p {
+            font-size: 16px;
+            line-height: 1.5;
+        }
+        .data-list {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .data-list dt {
+            font-weight: bold;
+        }
+        .button {
+            display: inline-block;
+            background-color: #007BFF;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        footer {
+            font-size: 14px;
+            color: #777;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Überprüfung Ihrer hinterlegten Daten</h1>
+    <p>Sehr geehrte/r ~Vorname~ ~Nachname~,</p>
+    <p>Wir bitten Sie, die folgenden bei uns hinterlegten Daten zu überprüfen, um sicherzustellen, dass sie korrekt und auf dem neuesten Stand sind:</p>
+
+    <dl class="data-list">
+        <dt>Vorname:</dt>
+        <dd>~Vorname~</dd>
+
+        <dt>Nachname:</dt>
+        <dd>~Nachname~</dd>
+
+        <dt>Adresse:</dt>
+        <dd>~Adresse~</dd>
+
+        <dt>E-Mail:</dt>
+        <dd>~Email~</dd>
+
+        <dt>Allergien:</dt>
+        <dd>~Allergien~</dd>
+    </dl>
+
+    <p>Sollten die Daten nicht korrekt sein, können Sie sie ganz einfach über den folgenden Link aktualisieren:</p>
+    <p><a href="~UpdateLink~" class="button">Daten aktualisieren</a></p>
+
+    <p>Vielen Dank für Ihre Mithilfe!</p>
+
+    <footer>
+        <p>Mit freundlichen Grüßen</p>
+        <p>Ihr Kundenservice-Team</p>
+    </footer>
+</div>
+</body>
+</html>

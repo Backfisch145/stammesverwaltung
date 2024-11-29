@@ -6,7 +6,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.beans.factory.annotation.Autowired
 import java.util.*
 
-val log = KotlinLogging.logger("TranslatableText")
+private val log = KotlinLogging.logger("TranslatableText")
 open class TranslatableText(val id: String, vararg val params: Any) {
     fun translate(): String {
         return TranslationHelper.getTranslation(

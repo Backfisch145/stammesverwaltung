@@ -5,6 +5,8 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.charts.model.style.Color;
+import com.vaadin.flow.component.charts.model.style.SolidColor;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dependency.Uses;
@@ -13,6 +15,7 @@ import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.icon.VaadinIcon;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.FlexComponent;
@@ -24,6 +27,7 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.receivers.FileBuffer;
 import com.vaadin.flow.component.upload.receivers.FileData;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.function.ValueProvider;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -31,12 +35,14 @@ import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vcp.hessen.kurhessen.core.i18n.TranslationHelper;
+import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
 import com.vcp.hessen.kurhessen.data.*;
 import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
 import com.vcp.hessen.kurhessen.features.usermanagement.UserService;
 import com.vcp.hessen.kurhessen.features.usermanagement.compoenents.MemberDetailsForm;
 import com.vcp.hessen.kurhessen.features.usermanagement.compoenents.MyUploadI18N;
 import com.vcp.hessen.kurhessen.views.MainLayout;
+import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -46,6 +52,7 @@ import jakarta.persistence.criteria.Root;
 
 import java.io.File;
 import java.io.InputStream;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.ArrayList;
@@ -56,28 +63,29 @@ import org.apache.poi.poifs.crypt.dsig.ExpiredCertificateSecurityException;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import static com.sun.java.accessibility.util.SwingEventMonitor.addChangeListener;
 
 @PageTitle("Mitglieder")
-@Route(value = "admin/members", layout = MainLayout.class)
-@RolesAllowed("ADMIN")
+@Route(value = "members", layout = MainLayout.class)
+@RolesAllowed("MEMBER_READ")
 @Uses(Icon.class)
 @Slf4j
 public class MitgliederView extends Div {
-
-    private Grid<User> grid;
-
-    private Filters filters;
-    private MemberDetailsForm form;
+    private final Grid<User> grid;
+    private final Filters filters;
+    private final MemberDetailsForm form;
     private final UserService userService;
+    private final AuthenticatedUser user;
 
-    public MitgliederView(UserService userService) {
+    public MitgliederView(UserService userService, AuthenticatedUser user) {
         this.userService = userService;
+        this.user = user;
         setSizeFull();
         addClassNames("mitglieder-view");
 
-        filters = new Filters(this::refreshGrid);
+        filters = new Filters(user, this::refreshGrid);
         VerticalLayout layout = new VerticalLayout();
         layout.add(createImportButton());
         layout.add(createMobileFilters());
@@ -143,8 +151,7 @@ public class MitgliederView extends Div {
         i18n.getAddFiles().setOne(new TranslatableText("ImportFromGruen").translate());
         i18n.getDropFiles().setOne(new TranslatableText("DropFileHere").translate());
         i18n.getError()
-                .setIncorrectFileType(
-                        "The provided file does not have the correct format. Please provide a PDF document.");
+                .setIncorrectFileType(new TranslatableText("WrongFileFormat").translate());
         upload.setI18n(i18n);
 
         upload.setMaxFiles(1);
@@ -187,19 +194,12 @@ public class MitgliederView extends Div {
             );
             notification.addThemeVariants(NotificationVariant.LUMO_ERROR);
         });
-
-
-        // Mobile version
-//        Button button = new Button();
-//        button.setText("Import Excel von Gruen");
-//        button.addClickListener(buttonClickEvent -> {
-//
-//        });
         return upload;
     }
 
     public static class Filters extends Div implements Specification<User> {
 
+        private final AuthenticatedUser user;
         private final TextField membershipId = new TextField(new TranslatableText("MembershipNumber").translate());
         private final TextField name = new TextField(new TranslatableText("Name").translate());
 //        private final TextField phone = new TextField(new TranslatableText("Phone").translate());
@@ -207,7 +207,8 @@ public class MitgliederView extends Div {
         private final DatePicker endDate = new DatePicker();
         private final MultiSelectComboBox<String> levels = new MultiSelectComboBox<>(new TranslatableText("Level").translate());
 
-        public Filters(Runnable onSearch) {
+        public Filters(AuthenticatedUser user, Runnable onSearch) {
+            this.user = user;
 
             setWidthFull();
             addClassName("filter-layout");
@@ -224,12 +225,11 @@ public class MitgliederView extends Div {
             Button resetBtn = new Button(new TranslatableText("Reset").translate());
             resetBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
             resetBtn.addClickListener(e -> {
+                membershipId.clear();
                 name.clear();
-//                phone.clear();
                 startDate.clear();
                 endDate.clear();
                 levels.clear();
-                membershipId.clear();
                 onSearch.run();
             });
             Button searchBtn = new Button(new TranslatableText("Search").translate());
@@ -243,7 +243,6 @@ public class MitgliederView extends Div {
             add(
                     membershipId,
                     name,
-//                    phone,
                     createDateRangeFilter(),
                     levels,
                     actions
@@ -272,8 +271,7 @@ public class MitgliederView extends Div {
             List<Predicate> predicates = new ArrayList<>();
 
             if (!membershipId.isEmpty()) {
-                String databaseColumn = "membership_id";
-                Predicate membershipMatch = criteriaBuilder.like(criteriaBuilder.lower(root.get(databaseColumn)), "%" + membershipId.getValue() + "%");
+                Predicate membershipMatch = criteriaBuilder.like(root.get( "membershipId").as(String.class), "%" + membershipId.getValue() + "%");
                 predicates.add(membershipMatch);
             }
             if (!name.isEmpty()) {
@@ -284,17 +282,6 @@ public class MitgliederView extends Div {
                         lowerCaseFilter + "%");
                 predicates.add(criteriaBuilder.or(firstNameMatch, lastNameMatch));
             }
-//            if (!phone.isEmpty()) {
-//                String databaseColumn = "phone";
-//                String ignore = "- ()";
-//
-//                String lowerCaseFilter = ignoreCharacters(ignore, phone.getValue().toLowerCase());
-//                Predicate phoneMatch = criteriaBuilder.like(
-//                        ignoreCharacters(ignore, criteriaBuilder, criteriaBuilder.lower(root.get(databaseColumn))),
-//                        "%" + lowerCaseFilter + "%");
-//                predicates.add(phoneMatch);
-//
-//            }
             if (startDate.getValue() != null) {
                 String databaseColumn = "dateOfBirth";
                 predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get(databaseColumn),
@@ -317,30 +304,15 @@ public class MitgliederView extends Div {
 
             return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
         }
-
-        private String ignoreCharacters(String characters, String in) {
-            String result = in;
-            for (int i = 0; i < characters.length(); i++) {
-                result = result.replace("" + characters.charAt(i), "");
-            }
-            return result;
-        }
-
-        private Expression<String> ignoreCharacters(String characters, CriteriaBuilder criteriaBuilder,
-                Expression<String> inExpression) {
-            Expression<String> expression = inExpression;
-            for (int i = 0; i < characters.length(); i++) {
-                expression = criteriaBuilder.function("replace", String.class, expression,
-                        criteriaBuilder.literal(characters.charAt(i)), criteriaBuilder.literal(""));
-            }
-            return expression;
-        }
-
     }
 
     private Grid<User> createGrid() {
         Grid<User> grid = new Grid<>(User.class, false);
         grid.setSizeFull();
+        grid.addColumn(traitRenderer())
+                .setHeader(new TranslatableText("Traits").translate())
+                .setSortable(false)
+                .setAutoWidth(true);
         grid.addColumn("membershipId")
                 .setHeader(new TranslatableText("MembershipNumberShort").translate())
                 .setAutoWidth(true);
@@ -363,14 +335,18 @@ public class MitgliederView extends Div {
         grid.addColumn(dateOfBirthRenderer(), "dateOfBirth")
                 .setHeader(new TranslatableText("Birthday").translate())
                 .setAutoWidth(true);
+        grid.addColumn(dateOfJoinRenderer(), "joinDate")
+                .setHeader(new TranslatableText("Joining").translate())
+                .setAutoWidth(true);
         grid.addColumn(genderRenderer(), "gender")
                 .setHeader(new TranslatableText("Gender").translate())
                 .setAutoWidth(true);
-        grid.addColumn(levelRenderer(), "level")
+        grid.addColumn(levelRenderer())
                 .setHeader(new TranslatableText("Level").translate())
+                .setSortProperty("level")
                 .setAutoWidth(true);
 
-        grid.addColumn(nextLevelRenderer(), "nextLevel")
+        grid.addColumn(nextLevelRenderer())
                 .setHeader(new TranslatableText("NextLevel").translate())
                 .setAutoWidth(true)
                 .setSortable(false);
@@ -401,23 +377,33 @@ public class MitgliederView extends Div {
     @NotNull
     private static ValueProvider<User, String> genderRenderer() {
         return user -> {
-            String genderStr = new TranslatableText("Unknown").translate();
-            if (user.getGender() != null) {
-                genderStr = new TranslatableText(user.getGender().name()).translate();
+            Gender g = user.getGender();
+            if (g == null) {
+                g = Gender.UNKNOWN;
             }
-            return genderStr;
+            return g.getTitleTranslated();
         };
     }
+
     @NotNull
-    private static ValueProvider<User, String> levelRenderer() {
-        return user -> {
-            String levelStr = new TranslatableText("Unknown").translate();
-            if (user.getLevel() != null) {
-                levelStr = new TranslatableText(user.getLevel().name()).translate();
+    private static ComponentRenderer<Icon, User> levelRenderer() {
+        return new ComponentRenderer<>(user -> {
+            Level level = user.getLevel();
+            Icon icon;
+            if (level == null) {
+                icon = VaadinIcon.CIRCLE_THIN.create();
+                icon.setTooltipText(new TranslatableText("Unknown").translate());
+            } else {
+                icon = VaadinIcon.CIRCLE.create();
+                icon.setTooltipText(level.getTitleTranslated());
+                icon.setColor(level.getColorStr());
             }
-            return levelStr;
-        };
+            return icon;
+
+
+        });
     }
+
     @NotNull
     private static ValueProvider<User, String> nextLevelRenderer() {
         return User::getUntilNextLevelString;
@@ -427,6 +413,38 @@ public class MitgliederView extends Div {
         DateTimeFormatter usDateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(TranslationHelper.Companion.getCurrentLocale());
         return user -> user.getDateOfBirth().format(usDateFormatter);
     }
+    @NotNull
+    private static ValueProvider<User, String> dateOfJoinRenderer() {
+        DateTimeFormatter usDateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(TranslationHelper.Companion.getCurrentLocale());
+        return user -> {
+            LocalDate ld = user.getJoinDate();
+            if (ld != null) {
+                return ld.format(usDateFormatter);
+            }
+            return new TranslatableText("Unknown").translate();
+        };
+    }
+    @NotNull
+    private static ComponentRenderer<VerticalLayout, User> traitRenderer() {
+        return new ComponentRenderer<>(user -> {
+            VerticalLayout vl = new VerticalLayout();
+
+            Icon cameraIcon = VaadinIcon.CAMERA.create();
+            if (!user.isPicturesAllowed()) {
+                cameraIcon.getElement().getStyle().set("color", "var(--lumo-error-color)");
+                cameraIcon.setTooltipText(new TranslatableText("NoPictureAllowance").translate());
+            } else {
+                cameraIcon.getElement().getStyle().set("color", "var(--lumo-success-color)");
+                cameraIcon.setTooltipText(new TranslatableText("PictureAllowance").translate());
+            }
+
+
+            vl.add(cameraIcon);
+
+            return vl;
+        });
+    }
+
 
     private void closeEditor() {
         form.setUser(null);

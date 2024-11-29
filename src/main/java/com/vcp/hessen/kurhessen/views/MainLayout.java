@@ -19,6 +19,7 @@ import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
 import com.vcp.hessen.kurhessen.features.events.EventConfig;
 import com.vcp.hessen.kurhessen.features.inventory.InventoryConfig;
 import com.vcp.hessen.kurhessen.core.views.about.AboutView;
+import com.vcp.hessen.kurhessen.features.inventory.ItemView;
 import com.vcp.hessen.kurhessen.views.meinedaten.MeineDatenView;
 import com.vcp.hessen.kurhessen.features.usermanagement.views.MitgliederView;
 import com.vcp.hessen.kurhessen.views.veranstaltungen.EventView;
@@ -29,8 +30,10 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Optional;
 
+import jakarta.annotation.security.PermitAll;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
+import org.springframework.security.core.GrantedAuthority;
 import org.vaadin.lineawesome.LineAwesomeIcon;
 
 import static java.awt.SystemColor.text;
@@ -39,6 +42,7 @@ import static java.awt.SystemColor.text;
  * The main view is a top-level placeholder for other views.
  */
 @Slf4j
+@PermitAll
 public class MainLayout extends AppLayout {
 
     private H2 viewTitle;
@@ -83,6 +87,7 @@ public class MainLayout extends AppLayout {
     private SideNav createNavigation() {
         SideNav nav = new SideNav();
         log.info("eventConfig: " + eventConfig);
+        log.info("inventoryConfig: " + inventoryConfig);
 
 
         if (accessChecker.hasAccess(MeineDatenView.class)) {
@@ -102,9 +107,9 @@ public class MainLayout extends AppLayout {
         }
 
         if (inventoryConfig.isEnabled()) {
-            if (accessChecker.hasAccess(EventView.class)) {
+            if (accessChecker.hasAccess(ItemView.class)) {
                 nav.addItem(
-                        new SideNavItem("Inventar", EventView.class, LineAwesomeIcon.BOX_SOLID .create()));
+                        new SideNavItem("Inventar", ItemView.class, LineAwesomeIcon.BOX_SOLID .create()));
             }
         }
 

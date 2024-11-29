@@ -32,6 +32,7 @@ public class MemberDetailsForm extends FormLayout {
     private TextField email;
     private TextField phone;
     private DatePicker dateOfBirth;
+    private DatePicker joinDate;
     private TextField address;
     private ComboBox<Gender> gender = new ComboBox<>(new TranslatableText("Gender").translate(), Gender.getEntries());
     private ComboBox<Level> level = new ComboBox<>(new TranslatableText("Level").translate(), Level.getEntries());
@@ -50,12 +51,14 @@ public class MemberDetailsForm extends FormLayout {
         email = new TextField(new TranslatableText("Email").translate());
         phone = new TextField(new TranslatableText("Phone").translate());
         dateOfBirth = new DatePickerLocalised(new TranslatableText("Birthday").translate());
+        joinDate = new DatePickerLocalised(new TranslatableText("Joining").translate());
+        joinDate.setEnabled(false);
         address = new TextField(new TranslatableText("Address").translate());
         gender.setItemLabelGenerator(Gender::getTitleTranslated);
         level.setItemLabelGenerator(Level::getTitleTranslated);
 
         binder.bindInstanceFields(this);
-        this.add(membershipId, username, firstName, lastName, email, phone, dateOfBirth, address, gender, level, createButtonLayout());
+        this.add(membershipId, username, firstName, lastName, email, phone, dateOfBirth, joinDate, address, gender, level, createButtonLayout());
     }
 
     public void setUser(User value) {

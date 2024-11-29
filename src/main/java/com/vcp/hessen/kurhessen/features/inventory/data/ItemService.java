@@ -1,89 +1,119 @@
-package com.vcp.hessen.kurhessen.features.usermanagement;
+package com.vcp.hessen.kurhessen.features.inventory.data;
 
 import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
 import com.vcp.hessen.kurhessen.data.*;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.*;
-
-import com.vcp.hessen.kurhessen.features.inventory.data.Item;
+import com.vcp.hessen.kurhessen.features.usermanagement.UsermanagementConfig;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.hibernate.Hibernate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
+
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 @Service
 @Slf4j
-public class UserService {
+public class ItemService {
 
 
     private final AuthenticatedUser authenticatedUser;
-    private final UserRepository repository;
+    private final ItemRepository repository;
     private final TribeRepository repositoryTribe;
     private final UsermanagementConfig usermanagementConfig;
-    private final SimpleDateFormat gruenDateFormat;
 
-    public UserService(AuthenticatedUser user, UserRepository repository, TribeRepository repositoryTribe, UsermanagementConfig usermanagementConfig, TribeRepository tribeRepository) {
+    public ItemService(AuthenticatedUser user, ItemRepository repository, TribeRepository repositoryTribe, UsermanagementConfig usermanagementConfig) {
         this.authenticatedUser = user;
         this.repository = repository;
         this.repositoryTribe = repositoryTribe;
         this.usermanagementConfig = usermanagementConfig;
-
-        gruenDateFormat = new SimpleDateFormat(usermanagementConfig.getGruenDateFormat());
     }
 
-    @PreAuthorize("hasAuthority('MEMBER:READ')")
-    public List<User> getAll() {
+    @PreAuthorize("hasAuthority('INVENTORY_READ')")
+    @Transactional
+    public Set<Item> getAll() {
         if (authenticatedUser.get().isPresent()) {
             User u = authenticatedUser.get().get();
-
-            return repository.findAllByTribe(authenticatedUser.get().get().getTribe());
-        } else {
-            throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED);
+            Tribe tribe = u.getTribe();
+            Hibernate.initialize(tribe.getItems());
+            return tribe.getItems();
         }
+        return Collections.emptySet();
+
     }
 
-    @PreAuthorize("hasAuthority('MEMBER:READ')")
-    public Optional<User> get(Long id) {
-        return repository.findById(id);
-    }
+    @PreAuthorize("hasAuthority('INVENTORY_READ')")
+    @Transactional
+    public Set<Item> getAllRootElements() {
+        Set<Item> items = new HashSet<>();
+        for (Item item : getAll()) {
 
-    public User update(User entity) {
-        return repository.save(entity);
-    }
-
-    public void delete(User user) {
-        repository.delete(user);
-
-        try {
-            log.info("User " + this.authenticatedUser.get().get().getUsername() + " deleted user with id" + user.getUsername());
-        } catch (Exception e) {
-            log.error("User got deleted by Unauthorized User!", e);
+            if (item.getContainer() == null) {
+                Hibernate.initialize(item);
+                Hibernate.initialize(item.getItems());
+                items.add(item);
+            }
         }
+        return items;
 
     }
 
-    public Page<User> list(Pageable pageable) {
-        return list(pageable, null);
-    }
-
-    public Page<User> list(Pageable pageable, Specification<User> filter) {
+    @PreAuthorize("hasAuthority('INVENTORY_READ')")
+    @Transactional
+    public Optional<Item> get(Long id) {
         User user = authenticatedUser.get().orElseThrow(() -> new HttpClientErrorException(HttpStatus.UNAUTHORIZED));
 
-        Specification<User> tribeFilter = (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("tribe"), user.getTribe());
+        for (Item item : user.getTribe().getItems()) {
+            if (id.equals(item.getId())) {
+                return Optional.of(item);
+            }
+        }
+        return Optional.empty();
+    }
+
+    @PreAuthorize("hasAuthority('INVENTORY_UPDATE')")
+    public Item update(Item item) {
+        User user = authenticatedUser.get().orElseThrow(() -> new HttpClientErrorException(HttpStatus.UNAUTHORIZED));
+
+        if (item.getTribe().getId() == user.getTribe().getId()) {
+            log.info("User " + user.getUsername() + " updated item " + item.getId() + " " + item.getName());
+            return repository.save(item);
+        } else {
+            throw new HttpClientErrorException(HttpStatus.METHOD_NOT_ALLOWED, "Item is not associated to your Tribe!");
+        }
+    }
+
+    @PreAuthorize("hasAuthority('INVENTORY_DELETE')")
+    public void delete(Item item) {
+        User user = authenticatedUser.get().orElseThrow(() -> new HttpClientErrorException(HttpStatus.UNAUTHORIZED));
+
+        if (item.getTribe().getId() == user.getTribe().getId()) {
+            log.info("User " + user.getUsername() + " deleted item " + item.getId() + " " + item.getName());
+            repository.delete(item);
+        } else {
+            throw new HttpClientErrorException(HttpStatus.METHOD_NOT_ALLOWED, "Item is not associated to your Tribe!");
+        }
+    }
+
+    @PreAuthorize("hasAuthority('INVENTORY_READ')")
+    public Page<Item> list(Pageable pageable) {
+        return list(pageable, null);
+    }
+    @PreAuthorize("hasAuthority('INVENTORY_READ')")
+    public Page<Item> list(Pageable pageable, Specification<Item> filter) {
+        User user = authenticatedUser.get().orElseThrow(() -> new HttpClientErrorException(HttpStatus.UNAUTHORIZED));
+
+        Specification<Item> tribeFilter = (root, query, criteriaBuilder) -> criteriaBuilder.equal(root.get("tribe"), user.getTribe());
 
         if (filter != null) {
             tribeFilter = tribeFilter.and(filter);
@@ -92,15 +122,11 @@ public class UserService {
         return repository.findAll(tribeFilter, pageable);
     }
 
-    public int count() {
-        return (int) repository.count();
-    }
-
-
-    public String importGruenFile(File file) {
+    @PreAuthorize("hasAuthority('INVENTORY_INSERT')")
+    public String importFile(File file) {
 
         StringBuilder errorString = new StringBuilder();
-        try {
+        /*try {
             FileInputStream excelFile = new FileInputStream(file);
             Workbook workbook = new XSSFWorkbook(excelFile);
             Sheet datatypeSheet = workbook.getSheetAt(0);
@@ -295,10 +321,8 @@ public class UserService {
         } catch (IOException e) {
             log.error("The uploaded File could processed!", e);
             errorString.append("The uploaded File could processed!");
-        }
+        }*/
 
         return errorString.toString();
     }
-
-
 }

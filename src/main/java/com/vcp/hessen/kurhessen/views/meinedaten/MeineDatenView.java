@@ -25,13 +25,14 @@ import com.vcp.hessen.kurhessen.views.components.forms.UserForm;
 import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
 import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
 import com.vcp.hessen.kurhessen.views.MainLayout;
+import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import org.jetbrains.annotations.NotNull;
 
 @PageTitle("Meine Daten")
 @Route(value = "me", layout = MainLayout.class)
 @RouteAlias(value = "", layout = MainLayout.class)
-@RolesAllowed("USER")
+@PermitAll
 @Uses(Icon.class)
 public class MeineDatenView extends Composite<VerticalLayout> {
 
@@ -121,9 +122,18 @@ public class MeineDatenView extends Composite<VerticalLayout> {
                 u.setEmail(form.getEmail().getValue());
                 u.setGender(form.getGender().getValue());
                 u.setPhone(form.getPhone().getValue());
-                u.setIntolerances(form.getIntolerances().getValue());
-                u.setEatingHabits(form.getEatingHabits().getValue());
-                form.getPicturesAllowed();
+
+                if (form.getIntolerances().getValue().isBlank()) {
+                    u.setIntolerances(null);
+                } else {
+                    u.setIntolerances(form.getIntolerances().getValue());
+                }
+                if (form.getEatingHabits().getValue().isBlank()) {
+                    u.setEatingHabits(null);
+                } else {
+                    u.setEatingHabits(form.getEatingHabits().getValue());
+                }
+
                 u.setPicturesAllowed(form.getPicturesAllowed().getValue());
                 userRepository.save(u);
                 Notification

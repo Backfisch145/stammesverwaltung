@@ -1,6 +1,6 @@
 package com.vcp.hessen.kurhessen.features.events;
 
-import com.vcp.hessen.kurhessen.data.Role;
+import com.vcp.hessen.kurhessen.core.security.Role;
 import com.vcp.hessen.kurhessen.data.User;
 import com.vcp.hessen.kurhessen.features.events.data.Event;
 import com.vcp.hessen.kurhessen.features.events.data.EventRepository;
@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Optional;
 
 import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
+import com.vcp.hessen.kurhessen.features.inventory.data.Item;
+import jakarta.persistence.criteria.Predicate;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Hibernate;
@@ -16,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 
@@ -56,21 +59,24 @@ public class EventService {
         repository.deleteById(id);
     }
 
+
+    @PreAuthorize("hasAuthority('EVENT_READ')")
     public Page<Event> list(Pageable pageable) {
-        return repository.findAll(pageable);
+        return list(pageable, null);
     }
-
+    @PreAuthorize("hasAuthority('EVENT_READ')")
     public Page<Event> list(Pageable pageable, Specification<Event> filter) {
-
         User user = authenticatedUser.get().orElseThrow(() -> new HttpClientErrorException(HttpStatus.UNAUTHORIZED));
 
-        if (!user.getRoles().contains(Role.ADMIN)) {
-            List<Event> userEvents = repository.findEventsByParticipantsContainingUserId(user.getId());
-            filter = filter.and((Specification<Event>) (root, query, criteriaBuilder) ->
-                    criteriaBuilder.and(criteriaBuilder.isTrue(root.in(userEvents))));
+        List<Event> userEvents = repository.findEventsByParticipantsContainingUserId(user.getId());
+        Specification<Event> participantFilter = (root, query, criteriaBuilder) ->
+                criteriaBuilder.and(criteriaBuilder.isTrue(root.in(userEvents)));
+
+        if (filter != null) {
+            participantFilter = participantFilter.and(filter);
         }
 
-        return repository.findAll(filter, pageable);
+        return repository.findAll(participantFilter, pageable);
     }
 
     public int count() {
