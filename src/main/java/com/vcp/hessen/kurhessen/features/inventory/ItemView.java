@@ -1,11 +1,15 @@
 package com.vcp.hessen.kurhessen.features.inventory;
 
 import com.vaadin.flow.component.Component;
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.Uses;
 import com.vaadin.flow.component.grid.GridVariant;
+import com.vaadin.flow.component.grid.dnd.GridDragStartEvent;
+import com.vaadin.flow.component.grid.dnd.GridDropEvent;
+import com.vaadin.flow.component.grid.dnd.GridDropMode;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
@@ -20,19 +24,17 @@ import com.vaadin.flow.component.treegrid.TreeGrid;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.receivers.FileBuffer;
 import com.vaadin.flow.component.upload.receivers.FileData;
-import com.vaadin.flow.data.provider.hierarchy.TreeData;
-import com.vaadin.flow.data.provider.hierarchy.TreeDataProvider;
 import com.vaadin.flow.function.ValueProvider;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import com.vcp.hessen.kurhessen.core.components.MyUploadI18N;
 import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
 import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
 import com.vcp.hessen.kurhessen.features.inventory.components.ItemDetailsForm;
 import com.vcp.hessen.kurhessen.features.inventory.data.Item;
 import com.vcp.hessen.kurhessen.features.inventory.data.ItemService;
-import com.vcp.hessen.kurhessen.features.usermanagement.compoenents.MyUploadI18N;
 import com.vcp.hessen.kurhessen.views.MainLayout;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -40,6 +42,7 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Hibernate;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.boot.autoconfigure.web.servlet.MultipartProperties;
 import org.springframework.data.jpa.domain.Specification;
@@ -49,7 +52,6 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
 @PageTitle("Inventar")
 @Route(value = "items", layout = MainLayout.class)
@@ -62,15 +64,24 @@ public class ItemView extends Div {
     private final Filters filters;
     private final ItemDetailsForm form;
     private final ItemService itemService;
+    private final ItemDataProvider itemDataProvider;
+    private Item draggedItem;
 
-    public ItemView(ItemService itemService, AuthenticatedUser user, MultipartProperties multipartProperties) {
+
+    private final AuthenticatedUser user;
+
+    public ItemView(ItemService itemService, AuthenticatedUser user, MultipartProperties multipartProperties, ItemDataProvider itemDataProvider) {
         this.itemService = itemService;
+        this.user = user;
+        this.itemDataProvider = itemDataProvider;
         setSizeFull();
         addClassNames("mitglieder-view");
 
-        filters = new Filters(user, this::refreshGrid);
+        filters = new Filters(user, this::refreshGrid, this::addNewItem);
         VerticalLayout layout = new VerticalLayout();
-        layout.add(createImportButton());
+
+        // TODO: Planen wie man den Import sinnvoll gestaltet
+//        layout.add(createImportButton());
         layout.add(createMobileFilters());
         layout.add(filters);
 
@@ -90,6 +101,7 @@ public class ItemView extends Div {
         );
 
         treeGrid = createGrid();
+        refreshGrid();
 
         SplitLayout splitLayout = new SplitLayout(treeGrid, form);
         splitLayout.setSizeFull();
@@ -190,7 +202,7 @@ public class ItemView extends Div {
        private final AuthenticatedUser user;
         private final TextField name = new TextField(new TranslatableText("Name").translate());
 
-        public Filters(AuthenticatedUser user, Runnable onSearch) {
+        public Filters(AuthenticatedUser user, Runnable onSearch, Runnable onNew) {
             this.user = user;
 
             setWidthFull();
@@ -208,7 +220,10 @@ public class ItemView extends Div {
             searchBtn.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
             searchBtn.addClickListener(e -> onSearch.run());
 
-            Div actions = new Div(resetBtn, searchBtn);
+            Button addButton = new Button(new TranslatableText("NewItem").translate());
+            addButton.addClickListener(e -> onNew.run());
+
+            Div actions = new Div(resetBtn, searchBtn, addButton);
             actions.addClassName(LumoUtility.Gap.SMALL);
             actions.addClassName("actions");
 
@@ -270,18 +285,58 @@ public class ItemView extends Div {
             row.setSpacing(true);
             return row;
         }).setHeader(new TranslatableText("Item").translate());
+
         treeGrid.addColumn((ValueProvider<Item, String>) Item::getDescription);
         treeGrid.asSingleSelect().addValueChangeListener(event -> editItem(event.getValue()));
+        treeGrid.setRowsDraggable(true);
+        treeGrid.setDataProvider(itemDataProvider);
 
-        TreeDataProvider<Item> dataProvider = (TreeDataProvider<Item>) treeGrid.getDataProvider();
-        TreeData<Item> data = dataProvider.getTreeData();
-        Set<Item> rootItems = itemService.getAllRootElements();
-        data.addRootItems(rootItems);
+        treeGrid.addDragStartListener((ComponentEventListener<GridDragStartEvent<Item>>) event -> {
+            draggedItem = event.getDraggedItems().get(0);
+            Notification.show("Start drag of: " + draggedItem.getName());
+        });
 
-        for (Item rootItem : rootItems) {
-            data.addItems(rootItem, rootItem.getItems());
-        }
+        treeGrid.setDropMode(GridDropMode.ON_TOP_OR_BETWEEN);
 
+        treeGrid.addDropListener((ComponentEventListener<GridDropEvent<Item>>) event -> {
+            if (draggedItem == null) {
+                return;
+            }
+
+            Item targetItem = event.getDropTargetItem().orElse(null);
+
+            if (targetItem == null || (targetItem.getId() == draggedItem.getId())) {
+                draggedItem.setContainer(null);
+                itemService.update(draggedItem);
+                treeGrid.getDataProvider().refreshItem(draggedItem);
+                treeGrid.getDataProvider().refreshItem(targetItem);
+                return;
+            }
+
+
+            if (draggedItem.getContainer() != null && draggedItem.getContainer().getId() == targetItem.getId()) {
+                Notification nf = Notification
+                        .show("Item is already inside " + targetItem.getName());
+                nf.addThemeVariants(NotificationVariant.LUMO_WARNING);
+                nf.setPosition(Notification.Position.BOTTOM_CENTER);
+                return;
+            }
+
+            Hibernate.initialize(targetItem);
+            targetItem.getItems().add(draggedItem);
+            itemService.update(targetItem);
+            draggedItem.setContainer(targetItem);
+            itemService.update(draggedItem);
+            treeGrid.getDataProvider().refreshItem(draggedItem);
+            treeGrid.getDataProvider().refreshItem(targetItem);
+
+            Notification nf = Notification.show("Dropped " + draggedItem.getName() + " on " + targetItem.getName());
+            nf.addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            nf.setPosition(Notification.Position.BOTTOM_CENTER);
+        });
+        treeGrid.addDragEndListener(itemGridDragEndEvent -> {
+            draggedItem = null;
+        });
 
         return treeGrid;
     }
@@ -296,6 +351,10 @@ public class ItemView extends Div {
         }
     }
 
+    private void addNewItem() {
+        editItem(new Item());
+    }
+
     private void closeEditor() {
         form.setItem(null);
         form.setVisible(false);
@@ -308,6 +367,10 @@ public class ItemView extends Div {
 
     private void saveItem(ItemDetailsForm.SaveEvent event) {
         try {
+            if (event.getItem().getTribe() == null) {
+                event.getItem().setTribe(user.get().get().getTribe());
+            }
+
             itemService.update(event.getItem());
             refreshGrid();
             closeEditor();
@@ -323,7 +386,6 @@ public class ItemView extends Div {
     }
     private void deleteItem(ItemDetailsForm.DeleteEvent event) {
         itemService.delete(event.getItem());
-        refreshGrid();
         closeEditor();
     }
 }

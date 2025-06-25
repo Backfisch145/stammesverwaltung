@@ -11,7 +11,6 @@ import com.vaadin.flow.component.orderedlayout.Scroller;
 import com.vaadin.flow.component.sidenav.SideNav;
 import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.router.PageTitle;
-import com.vaadin.flow.server.StreamResource;
 import com.vaadin.flow.server.auth.AccessAnnotationChecker;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vcp.hessen.kurhessen.data.User;
@@ -20,23 +19,16 @@ import com.vcp.hessen.kurhessen.features.events.EventConfig;
 import com.vcp.hessen.kurhessen.features.inventory.InventoryConfig;
 import com.vcp.hessen.kurhessen.core.views.about.AboutView;
 import com.vcp.hessen.kurhessen.features.inventory.ItemView;
-import com.vcp.hessen.kurhessen.views.meinedaten.MeineDatenView;
+import com.vcp.hessen.kurhessen.features.usermanagement.views.MyselfView;
 import com.vcp.hessen.kurhessen.features.usermanagement.views.MitgliederView;
-import com.vcp.hessen.kurhessen.views.veranstaltungen.EventView;
-import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
+import com.vcp.hessen.kurhessen.features.events.EventView;
+
 import java.util.Optional;
 
 import jakarta.annotation.security.PermitAll;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.springframework.security.core.GrantedAuthority;
 import org.vaadin.lineawesome.LineAwesomeIcon;
-
-import static java.awt.SystemColor.text;
 
 /**
  * The main view is a top-level placeholder for other views.
@@ -90,8 +82,8 @@ public class MainLayout extends AppLayout {
         log.info("inventoryConfig: " + inventoryConfig);
 
 
-        if (accessChecker.hasAccess(MeineDatenView.class)) {
-            nav.addItem(new SideNavItem("Meine Daten", MeineDatenView.class, LineAwesomeIcon.USER.create()));
+        if (accessChecker.hasAccess(MyselfView.class)) {
+            nav.addItem(new SideNavItem("Meine Daten", MyselfView.class, LineAwesomeIcon.USER.create()));
 
         }
 

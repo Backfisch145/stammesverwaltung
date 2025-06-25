@@ -1,4 +1,4 @@
-package com.vcp.hessen.kurhessen.components;
+package com.vcp.hessen.kurhessen.core.components;
 
 import com.vaadin.flow.component.Html;
 import com.vaadin.flow.component.Text;

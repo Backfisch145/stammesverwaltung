@@ -1,4 +1,4 @@
-package com.vcp.hessen.kurhessen.views.components.forms
+package com.vcp.hessen.kurhessen.features.usermanagement.compoenents
 
 import com.vaadin.flow.component.Component
 import com.vaadin.flow.component.combobox.ComboBox
@@ -8,16 +8,16 @@ import com.vaadin.flow.component.textfield.EmailField
 import com.vaadin.flow.component.textfield.IntegerField
 import com.vaadin.flow.component.textfield.TextArea
 import com.vaadin.flow.component.textfield.TextField
-import com.vcp.hessen.kurhessen.components.PictureAllowanceCheckBox
+import com.vcp.hessen.kurhessen.core.components.PictureAllowanceCheckBox
 import com.vcp.hessen.kurhessen.core.i18n.TranslatableText
 import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser
 import com.vcp.hessen.kurhessen.data.Gender
 import com.vcp.hessen.kurhessen.data.User
-import com.vcp.hessen.kurhessen.views.components.DatePickerLocalised
+import com.vcp.hessen.kurhessen.core.components.DatePickerLocalised
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 
-public class UserForm(private val authenticatedUser: AuthenticatedUser) {
+public class MyselfForm(private val authenticatedUser: AuthenticatedUser) {
     val log = KotlinLogging.logger("UserForm")
 
     val memberId : IntegerField = membershipIdElement()
@@ -64,7 +64,7 @@ public class UserForm(private val authenticatedUser: AuthenticatedUser) {
             return false
         }
 
-        if (picturesAllowed?.isInvalid != false) {
+        if (picturesAllowed.isInvalid != false) {
             return false
         }
 
@@ -150,7 +150,8 @@ public class UserForm(private val authenticatedUser: AuthenticatedUser) {
     }
 
     fun birthdayElement(): DatePicker {
-        val datePicker = DatePickerLocalised(TranslatableText("Birthday").translate())
+        val datePicker =
+            DatePickerLocalised(TranslatableText("Birthday").translate())
         authenticatedUser.get().ifPresent { u: User ->
             datePicker.value = u.dateOfBirth
         }

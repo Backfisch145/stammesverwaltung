@@ -4,6 +4,7 @@ import com.vcp.hessen.kurhessen.data.Tribe;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.*;
+import org.hibernate.Hibernate;
 import org.hibernate.proxy.HibernateProxy;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,11 +47,11 @@ public class Item {
     @JoinColumn(name = "tribe_id")
     private Tribe tribe;
 
-    @ManyToOne
-    @JoinColumn(name = "container_id")
+    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.REFRESH, CascadeType.MERGE, CascadeType.DETACH})
+    @JoinColumn
     private Item container;
 
-    @OneToMany(mappedBy = "container", orphanRemoval = true, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "container", cascade = {CascadeType.PERSIST, CascadeType.REFRESH}, orphanRemoval = true)
     @ToString.Exclude
     private Set<Item> items = new LinkedHashSet<>();
 
@@ -70,6 +71,7 @@ public class Item {
 
     @Transactional
     public Set<Item> getItems() {
+        Hibernate.initialize(this);
         return items;
     }
 

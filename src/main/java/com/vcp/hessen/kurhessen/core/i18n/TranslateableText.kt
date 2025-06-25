@@ -8,6 +8,11 @@ import java.util.*
 
 private val log = KotlinLogging.logger("TranslatableText")
 open class TranslatableText(val id: String, vararg val params: Any) {
+
+    companion object {
+
+    }
+
     fun translate(): String {
         return TranslationHelper.getTranslation(
             id,

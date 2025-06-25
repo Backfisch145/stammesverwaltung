@@ -1,4 +1,4 @@
-package com.vcp.hessen.kurhessen.views.components;
+package com.vcp.hessen.kurhessen.core.components;
 
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.datetimepicker.DateTimePicker;
@@ -7,11 +7,16 @@ import com.vcp.hessen.kurhessen.core.i18n.TranslationHelper;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
+import java.util.Locale;
+import java.util.MissingResourceException;
 
 @Slf4j
-public class DateTimePickerLocalised extends DateTimePicker {
+public class DatePickerLocalised extends DatePicker {
+    private String title;
 
-    public DateTimePickerLocalised() {
+    public DatePickerLocalised(String title) {
+        this.title = title;
+        this.setLabel(this.title);
         this.setLocale(TranslationHelper.Companion.getCurrentLocale());
 
         DatePicker.DatePickerI18n localisedPicker = new DatePicker.DatePickerI18n();
@@ -52,9 +57,16 @@ public class DateTimePickerLocalised extends DateTimePicker {
         localisedPicker.setToday(new TranslatableText("Today").translate());
         localisedPicker.setCancel(new TranslatableText("Cancel").translate());
         localisedPicker.setFirstDayOfWeek(1);
-        this.setDatePickerI18n(localisedPicker);
+        this.setI18n(localisedPicker);
 
     }
 
+    public String getTitle() {
+        return title;
+    }
 
+    public void setTitle(String title) {
+        this.title = title;
+        this.setLabel(new TranslatableText(this.title).translate());
+    }
 }

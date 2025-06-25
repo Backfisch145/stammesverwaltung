@@ -25,6 +25,9 @@ public class Tribe {
     @Column(name = "name", nullable = false)
     String name;
 
+    @Column(nullable = false)
+    boolean separateMembership = false;
+
     @ToString.Exclude
     @OneToMany(mappedBy = "tribe", orphanRemoval = true)
     Set<User> users = new HashSet<>();

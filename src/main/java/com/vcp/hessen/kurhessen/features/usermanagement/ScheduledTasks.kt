@@ -2,6 +2,7 @@ package com.vcp.hessen.kurhessen.features.usermanagement
 
 import com.vcp.hessen.kurhessen.core.mail.EmailService
 import com.vcp.hessen.kurhessen.data.UserRepository
+import com.vcp.hessen.kurhessen.features.usermanagement.domain.UserService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value

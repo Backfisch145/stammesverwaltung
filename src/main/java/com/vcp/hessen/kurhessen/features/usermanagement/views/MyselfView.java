@@ -1,4 +1,4 @@
-package com.vcp.hessen.kurhessen.views.meinedaten;
+package com.vcp.hessen.kurhessen.features.usermanagement.views;
 
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.button.Button;
@@ -6,7 +6,6 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.Uses;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.H3;
-import com.vaadin.flow.component.html.H4;
 import com.vaadin.flow.component.html.Hr;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.notification.Notification;
@@ -19,14 +18,12 @@ import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
-import com.vcp.hessen.kurhessen.core.i18n.TranslationHelper;
 import com.vcp.hessen.kurhessen.data.*;
-import com.vcp.hessen.kurhessen.views.components.forms.UserForm;
 import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
 import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
+import com.vcp.hessen.kurhessen.features.usermanagement.compoenents.MyselfForm;
 import com.vcp.hessen.kurhessen.views.MainLayout;
 import jakarta.annotation.security.PermitAll;
-import jakarta.annotation.security.RolesAllowed;
 import org.jetbrains.annotations.NotNull;
 
 @PageTitle("Meine Daten")
@@ -34,18 +31,18 @@ import org.jetbrains.annotations.NotNull;
 @RouteAlias(value = "", layout = MainLayout.class)
 @PermitAll
 @Uses(Icon.class)
-public class MeineDatenView extends Composite<VerticalLayout> {
+public class MyselfView extends Composite<VerticalLayout> {
 
     private final AuthenticatedUser authenticatedUser;
     private final UserRepository userRepository;
 
-    private final UserForm form;
+    private final MyselfForm form;
 
-    public MeineDatenView(AuthenticatedUser authenticatedUser, UserRepository userRepository) {
+    public MyselfView(AuthenticatedUser authenticatedUser, UserRepository userRepository) {
         this.authenticatedUser = authenticatedUser;
         this.userRepository = userRepository;
 
-        form = new UserForm(authenticatedUser);
+        form = new MyselfForm(authenticatedUser);
 
 
         VerticalLayout layoutColumn2 = new VerticalLayout();

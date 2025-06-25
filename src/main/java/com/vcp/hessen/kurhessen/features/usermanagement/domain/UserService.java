@@ -1,7 +1,21 @@
-package com.vcp.hessen.kurhessen.features.usermanagement;
+package com.vcp.hessen.kurhessen.features.usermanagement.domain;
 
 import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
 import com.vcp.hessen.kurhessen.data.*;
+import com.vcp.hessen.kurhessen.features.usermanagement.UsermanagementConfig;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -11,19 +25,6 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.*;
-
-import com.vcp.hessen.kurhessen.features.inventory.data.Item;
-import jakarta.persistence.criteria.Predicate;
-import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.HttpStatus;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpClientErrorException;
 
 @Service
 @Slf4j
@@ -50,7 +51,7 @@ public class UserService {
         if (authenticatedUser.get().isPresent()) {
             User u = authenticatedUser.get().get();
 
-            return repository.findAllByTribe(authenticatedUser.get().get().getTribe());
+            return repository.findAllByTribe(u.getTribe());
         } else {
             throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED);
         }
@@ -92,10 +93,15 @@ public class UserService {
         return repository.findAll(tribeFilter, pageable);
     }
 
-    public int count() {
-        return (int) repository.count();
-    }
+    public int countUser() {
+        if (authenticatedUser.get().isPresent()) {
+            User u = authenticatedUser.get().get();
 
+            return repository.countAllByTribe(u.getTribe());
+        } else {
+            throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED);
+        }
+    }
 
     public String importGruenFile(File file) {
 

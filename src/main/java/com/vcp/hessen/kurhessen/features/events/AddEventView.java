@@ -1,4 +1,4 @@
-package com.vcp.hessen.kurhessen.views.veranstaltungen;
+package com.vcp.hessen.kurhessen.features.events;
 
 import com.vaadin.flow.component.Composite;
 import com.vaadin.flow.component.dependency.Uses;
@@ -12,16 +12,12 @@ import com.vaadin.flow.router.BeforeEnterObserver;
 import com.vaadin.flow.router.HasDynamicTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
-import com.vcp.hessen.kurhessen.core.security.Role;
 import com.vcp.hessen.kurhessen.data.User;
 import com.vcp.hessen.kurhessen.features.events.data.Event;
 import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
 import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
-import com.vcp.hessen.kurhessen.features.events.EventService;
-import com.vcp.hessen.kurhessen.features.usermanagement.UserService;
+import com.vcp.hessen.kurhessen.features.usermanagement.domain.UserService;
 import com.vcp.hessen.kurhessen.views.MainLayout;
-import com.vcp.hessen.kurhessen.features.events.EventForm;
-import jakarta.annotation.security.RolesAllowed;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpStatus;

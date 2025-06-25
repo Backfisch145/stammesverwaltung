@@ -1,12 +1,9 @@
 package com.vcp.hessen.kurhessen.features.usermanagement.views;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.charts.model.style.Color;
-import com.vaadin.flow.component.charts.model.style.SolidColor;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.dependency.Uses;
@@ -31,24 +28,27 @@ import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.function.ValueProvider;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.shared.Registration;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import com.vcp.hessen.kurhessen.core.components.MyUploadI18N;
+import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
 import com.vcp.hessen.kurhessen.core.i18n.TranslationHelper;
 import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
-import com.vcp.hessen.kurhessen.data.*;
-import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
-import com.vcp.hessen.kurhessen.features.usermanagement.UserService;
+import com.vcp.hessen.kurhessen.data.Gender;
+import com.vcp.hessen.kurhessen.data.Level;
+import com.vcp.hessen.kurhessen.data.User;
 import com.vcp.hessen.kurhessen.features.usermanagement.compoenents.MemberDetailsForm;
-import com.vcp.hessen.kurhessen.features.usermanagement.compoenents.MyUploadI18N;
+import com.vcp.hessen.kurhessen.features.usermanagement.domain.UserService;
 import com.vcp.hessen.kurhessen.views.MainLayout;
-import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
+import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.io.File;
 import java.io.InputStream;
@@ -57,15 +57,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.List;
-
-import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.poifs.crypt.dsig.ExpiredCertificateSecurityException;
-import org.jetbrains.annotations.NotNull;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.access.prepost.PreAuthorize;
-
-import static com.sun.java.accessibility.util.SwingEventMonitor.addChangeListener;
 
 @PageTitle("Mitglieder")
 @Route(value = "members", layout = MainLayout.class)
@@ -425,9 +416,9 @@ public class MitgliederView extends Div {
         };
     }
     @NotNull
-    private static ComponentRenderer<VerticalLayout, User> traitRenderer() {
+    private static ComponentRenderer<HorizontalLayout, User> traitRenderer() {
         return new ComponentRenderer<>(user -> {
-            VerticalLayout vl = new VerticalLayout();
+            HorizontalLayout vl = new HorizontalLayout();
 
             Icon cameraIcon = VaadinIcon.CAMERA.create();
             if (!user.isPicturesAllowed()) {
@@ -437,9 +428,20 @@ public class MitgliederView extends Div {
                 cameraIcon.getElement().getStyle().set("color", "var(--lumo-success-color)");
                 cameraIcon.setTooltipText(new TranslatableText("PictureAllowance").translate());
             }
-
-
             vl.add(cameraIcon);
+
+            Icon memberIcon = VaadinIcon.CLIPBOARD_USER.create();
+            if (user.getTribe().isSeparateMembership()) {
+                if (user.getTribeMembershipContract() == null) {
+                    memberIcon.getElement().getStyle().set("color", "var(--lumo-error-color)");
+                    memberIcon.setTooltipText(new TranslatableText("NoSeparateMembership").translate());
+                } else {
+                    memberIcon.getElement().getStyle().set("color", "var(--lumo-success-color)");
+                    memberIcon.setTooltipText(new TranslatableText("HasSeparateMembership").translate());
+                }
+                vl.add(memberIcon);
+            }
+
 
             return vl;
         });

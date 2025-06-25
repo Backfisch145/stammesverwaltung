@@ -1,12 +1,10 @@
 package com.vcp.hessen.kurhessen.features.inventory.data;
 
 import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
-import com.vcp.hessen.kurhessen.data.*;
+import com.vcp.hessen.kurhessen.data.Tribe;
+import com.vcp.hessen.kurhessen.data.TribeRepository;
+import com.vcp.hessen.kurhessen.data.User;
 import com.vcp.hessen.kurhessen.features.usermanagement.UsermanagementConfig;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.Hibernate;
 import org.springframework.data.domain.Page;
@@ -19,8 +17,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpClientErrorException;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 
 @Service
 @Slf4j
@@ -29,14 +29,10 @@ public class ItemService {
 
     private final AuthenticatedUser authenticatedUser;
     private final ItemRepository repository;
-    private final TribeRepository repositoryTribe;
-    private final UsermanagementConfig usermanagementConfig;
 
-    public ItemService(AuthenticatedUser user, ItemRepository repository, TribeRepository repositoryTribe, UsermanagementConfig usermanagementConfig) {
+    public ItemService(AuthenticatedUser user, ItemRepository repository) {
         this.authenticatedUser = user;
         this.repository = repository;
-        this.repositoryTribe = repositoryTribe;
-        this.usermanagementConfig = usermanagementConfig;
     }
 
     @PreAuthorize("hasAuthority('INVENTORY_READ')")
@@ -60,11 +56,22 @@ public class ItemService {
 
             if (item.getContainer() == null) {
                 Hibernate.initialize(item);
-                Hibernate.initialize(item.getItems());
                 items.add(item);
             }
         }
         return items;
+
+    }
+
+    @PreAuthorize("hasAuthority('INVENTORY_READ')")
+    @Transactional
+    public Set<Item> getContents(Item item) {
+
+            if (item.getContainer() == null) {
+                Hibernate.initialize(item);
+                return item.getItems();
+            }
+        return Collections.emptySet();
 
     }
 
@@ -86,12 +93,13 @@ public class ItemService {
         User user = authenticatedUser.get().orElseThrow(() -> new HttpClientErrorException(HttpStatus.UNAUTHORIZED));
 
         if (item.getTribe().getId() == user.getTribe().getId()) {
-            log.info("User " + user.getUsername() + " updated item " + item.getId() + " " + item.getName());
+            log.info("User " + user.getUsername() + " updated item with id:" + item.getId() + " name:" + item.getName());
             return repository.save(item);
         } else {
             throw new HttpClientErrorException(HttpStatus.METHOD_NOT_ALLOWED, "Item is not associated to your Tribe!");
         }
     }
+
 
     @PreAuthorize("hasAuthority('INVENTORY_DELETE')")
     public void delete(Item item) {

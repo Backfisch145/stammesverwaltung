@@ -20,4 +20,6 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
     Optional<User> findByMembershipId(int id);
 
     List<User> findAllByTribe(Tribe tribe);
+
+    int countAllByTribe(Tribe tribe);
 }

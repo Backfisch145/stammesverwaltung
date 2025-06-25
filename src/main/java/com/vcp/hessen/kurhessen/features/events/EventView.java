@@ -1,4 +1,4 @@
-package com.vcp.hessen.kurhessen.views.veranstaltungen;
+package com.vcp.hessen.kurhessen.features.events;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.ComponentEventListener;
@@ -27,7 +27,6 @@ import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vcp.hessen.kurhessen.core.i18n.TranslationHelper;
 import com.vcp.hessen.kurhessen.features.events.data.Event;
 import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
-import com.vcp.hessen.kurhessen.features.events.EventService;
 import com.vcp.hessen.kurhessen.views.MainLayout;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.persistence.criteria.*;

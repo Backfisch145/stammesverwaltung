@@ -6,12 +6,8 @@ import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.formlayout.FormLayout;
-import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
-import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
@@ -19,8 +15,7 @@ import com.vcp.hessen.kurhessen.core.util.Callback;
 import com.vcp.hessen.kurhessen.data.Gender;
 import com.vcp.hessen.kurhessen.data.Level;
 import com.vcp.hessen.kurhessen.data.User;
-import com.vcp.hessen.kurhessen.features.usermanagement.UserService;
-import com.vcp.hessen.kurhessen.views.components.DatePickerLocalised;
+import com.vcp.hessen.kurhessen.core.components.DatePickerLocalised;
 
 
 public class MemberDetailsForm extends FormLayout {

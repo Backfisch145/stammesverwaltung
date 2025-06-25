@@ -1,4 +1,4 @@
-package com.vcp.hessen.kurhessen.features.usermanagement.compoenents;
+package com.vcp.hessen.kurhessen.core.components;
 
 import com.vaadin.flow.component.upload.UploadI18N;
 

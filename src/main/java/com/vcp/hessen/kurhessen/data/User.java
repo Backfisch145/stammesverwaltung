@@ -94,6 +94,11 @@ public class User {
     @Column(columnDefinition = "false")
     private boolean moveFreelyInGroupOfThreeAllowed = false;
 
+    @Lob
+    @ToString.Exclude
+    @Column(length = 1000000)
+    private byte[] tribeMembershipContract;
+
     private LocalDate infoUpdateMailSent = null;
 
 
@@ -189,14 +194,16 @@ public class User {
 
     public String getUntilNextLevelString() {
 
+        if (this.level == null) {
+            return new TranslatableText("Unknown").translate();
+        }
+
         long ageInDays = getDaysTillNextLevel();
         if (ageInDays == -1) {
             return new TranslatableText("Unknown").translate();
         }
 
-        if (this.level == null) {
-            return "";
-        }
+
 
         if (this.level == Level.ERWACHSEN) {
             return "";
