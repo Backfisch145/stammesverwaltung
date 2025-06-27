@@ -39,7 +39,7 @@ public class User {
     @Version
     private int version;
 
-    @Column
+    @Column(unique = true)
     private Integer membershipId;
 
     @Column
@@ -57,6 +57,7 @@ public class User {
     private String email;
 
     @Column
+    @Nullable
     private String phone;
 
     @Column
@@ -79,8 +80,9 @@ public class User {
     @JsonIgnore
     private String hashedPassword;
 
+    @ToString.Exclude
     @Lob
-    @Column(length = 1000000)
+    @Basic(fetch = FetchType.LAZY)
     private byte[] profilePicture;
 
     private String intolerances;
@@ -93,11 +95,6 @@ public class User {
     private boolean swimmingInGroupOfThreeAllowed = false;
     @Column(columnDefinition = "false")
     private boolean moveFreelyInGroupOfThreeAllowed = false;
-
-    @Lob
-    @ToString.Exclude
-    @Column(length = 1000000)
-    private byte[] tribeMembershipContract;
 
     private LocalDate infoUpdateMailSent = null;
 
@@ -118,6 +115,14 @@ public class User {
     @ToString.Exclude
     @OneToMany(mappedBy = "user", orphanRemoval = true, fetch = FetchType.EAGER)
     private Set<Role> roles = new LinkedHashSet<>();
+
+    @ToString.Exclude
+    @OneToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH}, orphanRemoval = true)
+    @JoinColumn
+    private Set<UserFile> userFiles = new LinkedHashSet<>();
+
+    private Set<String> tags =  new LinkedHashSet<>();
+
 
     @Nullable
     public UserEmergencyContact getUserEmergencyContact() {
@@ -173,7 +178,7 @@ public class User {
 
     public boolean hasPermission(String permissionStr) {
         for (GrantedAuthority authority : getAuthorities()) {
-           if (permissionStr.equals(authority.getAuthority())) {
+           if (permissionStr.equals(authority.getAuthority()) || permissionStr.equals(authority.getAuthority().replace("ROLE_", ""))) {
                return true;
            }
         }
@@ -230,6 +235,10 @@ public class User {
             }
             return "in " + daysUntilLevel + " days";
         }
+    }
+
+    public boolean hasMembershipContract() {
+        return userFiles.stream().anyMatch(it -> it.getType() == UserFile.UserFileType.MEMBERSHIP_AGREEMENT);
     }
 
     public List<GrantedAuthority> getAuthorities() {

@@ -5,6 +5,7 @@ import com.vcp.hessen.kurhessen.features.inventory.data.Item;
 import jakarta.persistence.*;
 import lombok.*;
 
+import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -25,8 +26,9 @@ public class Tribe {
     @Column(name = "name", nullable = false)
     String name;
 
-    @Column(nullable = false)
-    boolean separateMembership = false;
+    @Column
+    @Nullable
+    TribeMembership tribeMembership = null;
 
     @ToString.Exclude
     @OneToMany(mappedBy = "tribe", orphanRemoval = true)

@@ -1,16 +1,16 @@
-create sequence public.event_participants_seq
+create sequence event_participants_seq
     increment by 50;
 
-create sequence public.events_seq
+create sequence events_seq
     increment by 50;
 
-create sequence public.groups_seq
+create sequence groups_seq
     increment by 50;
 
-create sequence public.users_seq
+create sequence users_seq
     increment by 50;
 
-create table public.events
+create table events
 (
     id                     integer not null
         primary key,
@@ -24,7 +24,7 @@ create table public.events
     version                integer not null
 );
 
-create table public.groups
+create table groups
 (
     id      bigint  not null
         primary key,
@@ -32,7 +32,7 @@ create table public.groups
     version integer not null
 );
 
-create table public.users
+create table users
 (
     id               bigint       not null
         primary key,
@@ -59,7 +59,7 @@ create table public.users
     version          integer      not null
 );
 
-create table public.event_participants
+create table event_participants
 (
     id         bigint       not null
         primary key,
@@ -73,20 +73,29 @@ create table public.event_participants
                    ((ARRAY ['INVITED'::character varying, 'DECLINED'::character varying, 'IN_PAYMENT'::character varying, 'IN_REPAYMENT'::character varying, 'REGISTERED'::character varying])::text[])),
     event_id   integer      not null
         constraint fk2x391urx4up03f4jp2y9mdt5x
-            references public.events,
+            references events,
     user_id    bigint       not null
         constraint fkre6m0d4mgt4351tytlkac9jvf
-            references public.users
+            references users
 );
 
-create table public.user_roles
+create table roles
 (
-    user_id bigint not null
-        constraint fkhfh9dx7w3ubf1co1vdev94g3f
-            references public.users,
-    roles   varchar(255)
-        constraint user_roles_roles_check
-            check ((roles)::text = ANY
-        ((ARRAY ['USER'::character varying, 'MODERATOR'::character varying, 'ADMIN'::character varying])::text[]))
-    );
+    name    varchar(255) not null
+        primary key,
+    user_id bigint
+        constraint fk97mxvrajhkq19dmvboprimeg1
+            references users
+);
 
+create table roles_permissions
+(
+    id         varchar(255) not null
+        constraint fkjborrqw6nakj98opptncin4ki
+            references roles,
+    permission varchar(255) not null
+        constraint roles_permissions_permission_check
+            check ((permission)::text = ANY
+        ((ARRAY ['MEMBER_READ'::character varying, 'MEMBER_INSERT'::character varying, 'MEMBER_DELETE'::character varying, 'MEMBER_UPDATE'::character varying, 'INVENTORY_READ'::character varying, 'INVENTORY_INSERT'::character varying, 'INVENTORY_DELETE'::character varying, 'INVENTORY_UPDATE'::character varying, 'EVENT_READ'::character varying, 'EVENT_INSERT'::character varying, 'EVENT_DELETE'::character varying, 'EVENT_UPDATE'::character varying])::text[])),
+    primary key (id, permission)
+);

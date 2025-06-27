@@ -15,24 +15,25 @@ import com.vcp.hessen.kurhessen.data.Gender
 import com.vcp.hessen.kurhessen.data.User
 import com.vcp.hessen.kurhessen.core.components.DatePickerLocalised
 import io.github.oshai.kotlinlogging.KotlinLogging
+import java.util.Optional
 
 
-public class MyselfForm(private val authenticatedUser: AuthenticatedUser) {
+public class MyselfForm(private val user: User) : FormLayout() {
     val log = KotlinLogging.logger("UserForm")
 
-    val memberId : IntegerField = membershipIdElement()
-    val tribeId : TextField = tribeElement()
-    val firstName : TextField = firstNameElement()
-    val lastName : TextField = lastNameElement()
-    val birthday : DatePicker = birthdayElement()
-    val gender : ComboBox<Gender> = genderElement()
-    val phone : TextField = phoneElement()
-    val email : EmailField = emailElement()
-    val address : TextField = addressElement()
-    val intolerances : TextArea = intolerancesElement()
-    val eatingHabits : TextArea = eatingHabitsElement()
-    val picturesAllowed : PictureAllowanceCheckBox = picturesAllowedElement()
-    val emergencyContact : Component = getEmergencyContactElement()
+    val memberId: IntegerField = membershipIdElement()
+    val tribeId: TextField = tribeElement()
+    val firstName: TextField = firstNameElement()
+    val lastName: TextField = lastNameElement()
+    val birthday: DatePicker = birthdayElement()
+    val gender: ComboBox<Gender> = genderElement()
+    val phone: TextField = phoneElement()
+    val email: EmailField = emailElement()
+    val address: TextField = addressElement()
+    val intolerances: TextArea = intolerancesElement()
+    val eatingHabits: TextArea = eatingHabitsElement()
+    val picturesAllowed: PictureAllowanceCheckBox = picturesAllowedElement()
+    val emergencyContact: Component = getEmergencyContactElement()
 
     fun isValid(): Boolean {
         if (memberId.isInvalid) {
@@ -76,9 +77,7 @@ public class MyselfForm(private val authenticatedUser: AuthenticatedUser) {
         integerField.label = TranslatableText("MembershipNumber").translate()
         integerField.width = "400px"
         integerField.isReadOnly = true
-        authenticatedUser.get().ifPresent { u: User ->
-            integerField.value = u.membershipId
-        }
+        integerField.value = user.membershipId ?: -1
         return integerField
     }
 
@@ -87,9 +86,7 @@ public class MyselfForm(private val authenticatedUser: AuthenticatedUser) {
         textField.label = TranslatableText("Tribe").translate()
         textField.width = "400px"
         textField.isReadOnly = true
-        authenticatedUser.get().ifPresent { u: User ->
-            textField.value = u.tribe.name ?:""
-        }
+        textField.value = user.tribe.name ?: ""
         return textField
     }
 
@@ -98,9 +95,7 @@ public class MyselfForm(private val authenticatedUser: AuthenticatedUser) {
         textField.label = TranslatableText("FirstName").translate()
         textField.width = "400px"
         textField.minLength = 1
-        authenticatedUser.get().ifPresent { u: User ->
-            textField.value = u.firstName
-        }
+        textField.value = user.firstName ?:""
         textField.isRequired = true
         return textField
     }
@@ -110,9 +105,8 @@ public class MyselfForm(private val authenticatedUser: AuthenticatedUser) {
         textField.label = TranslatableText("LastName").translate()
         textField.width = "400px"
         textField.minLength = 1
-        authenticatedUser.get().ifPresent { u: User ->
-            textField.value = u.lastName
-        }
+        textField.value = user.lastName ?:""
+
         textField.isRequired = true
         return textField
     }
@@ -121,9 +115,7 @@ public class MyselfForm(private val authenticatedUser: AuthenticatedUser) {
         val textField = TextField()
         textField.label = TranslatableText("Phone").translate()
         textField.width = "min-content"
-        authenticatedUser.get().ifPresent { u: User ->
-            textField.value = u.phone
-        }
+        textField.value = user.phone ?:""
         return textField
     }
 
@@ -132,9 +124,7 @@ public class MyselfForm(private val authenticatedUser: AuthenticatedUser) {
         val emailField = EmailField()
         emailField.label = TranslatableText("Email").translate()
         emailField.width = "min-content"
-        authenticatedUser.get().ifPresent { u: User ->
-            emailField.value = u.email?:""
-        }
+        emailField.value = user.email ?: ""
         emailField.isRequired = true
         return emailField
     }
@@ -143,18 +133,16 @@ public class MyselfForm(private val authenticatedUser: AuthenticatedUser) {
         val textField = TextField()
         textField.label = TranslatableText("Address").translate()
         textField.width = "min-content"
-        authenticatedUser.get().ifPresent { u: User ->
-            textField.value = u.address?:""
-        }
+        textField.value = user.address ?: ""
+
         return textField
     }
 
     fun birthdayElement(): DatePicker {
         val datePicker =
             DatePickerLocalised(TranslatableText("Birthday").translate())
-        authenticatedUser.get().ifPresent { u: User ->
-            datePicker.value = u.dateOfBirth
-        }
+        datePicker.value = user.dateOfBirth
+
 
         return datePicker
     }
@@ -165,11 +153,9 @@ public class MyselfForm(private val authenticatedUser: AuthenticatedUser) {
         comboBox.width = "min-content"
         comboBox.setItems(Gender.entries)
         comboBox.setItemLabelGenerator { g: Gender -> TranslatableText(g.langKey).translate() }
-        authenticatedUser.get().ifPresent { u: User ->
-            comboBox.setValue(
-                u.gender
-            )
-        }
+        comboBox.setValue(
+            user.gender
+        )
         return comboBox
     }
 
@@ -179,9 +165,8 @@ public class MyselfForm(private val authenticatedUser: AuthenticatedUser) {
         textArea.placeholder = TranslatableText("IntolerancesPlaceholder").translate()
         textArea.setWidthFull()
         textArea.helperText = "Sachen auf die Ihr Kind allergisch reagiert oder nicht verträgt"
-        authenticatedUser.get().ifPresent { u: User ->
-            textArea.value = u.intolerances ?: ""
-        }
+        textArea.value = user.intolerances ?: ""
+
         return textArea
     }
 
@@ -191,21 +176,21 @@ public class MyselfForm(private val authenticatedUser: AuthenticatedUser) {
         textArea.placeholder = TranslatableText("EatingHabitsPlaceholder").translate()
         textArea.setWidthFull()
         textArea.helperText = "Sachen die Ihr Kind gerne oder ungerne isst"
-        authenticatedUser.get().ifPresent { u: User ->
-            textArea.value = u.eatingHabits ?: ""
-        }
+        textArea.value = user.eatingHabits ?: ""
+
         return textArea
     }
 
     fun picturesAllowedElement(): PictureAllowanceCheckBox {
         val pictureAllowance = PictureAllowanceCheckBox()
-        authenticatedUser.get().ifPresent { u: User ->
-            pictureAllowance.setValue(
-                u.isPicturesAllowed
-            )
-        }
+
+        pictureAllowance.setValue(
+            user.isPicturesAllowed
+        )
+
         return pictureAllowance
     }
+
     fun getEmergencyContactElement(): Component {
         val root = FormLayout()
         root.setWidth("100%")
@@ -213,33 +198,29 @@ public class MyselfForm(private val authenticatedUser: AuthenticatedUser) {
         val nameField = TextField()
         nameField.label = TranslatableText("Name").translate()
         nameField.width = "min-content"
-        authenticatedUser.get().ifPresent { u: User ->
-            nameField.value = u.userEmergencyContact?.name ?: ""
-        }
+        nameField.value = user.userEmergencyContact?.name ?: ""
+
         root.add(nameField)
 
         val addressField = TextField()
         addressField.label = TranslatableText("Address").translate()
         addressField.width = "min-content"
-        authenticatedUser.get().ifPresent { u: User ->
-            addressField.value = u.userEmergencyContact?.address ?: ""
-        }
+        addressField.value = user.userEmergencyContact?.address ?: ""
+
         root.add(addressField)
 
         val phoneField = TextField()
         phoneField.label = TranslatableText("Phone").translate()
         phoneField.width = "min-content"
-        authenticatedUser.get().ifPresent { u: User ->
-            phoneField.value = u.userEmergencyContact?.phone ?: ""
-        }
+
+        phoneField.value = user.userEmergencyContact?.phone ?: ""
+
         root.add(phoneField)
 
         val emailField = EmailField()
         emailField.label = TranslatableText("Email").translate()
         emailField.width = "min-content"
-        authenticatedUser.get().ifPresent { u: User ->
-            emailField.value = u.userEmergencyContact?.email ?: ""
-        }
+        emailField.value = user.userEmergencyContact?.email ?: ""
         root.add(emailField)
 
         return root

@@ -36,7 +36,7 @@ class TranslationProvider implements I18NProvider {
         String value;
         try {
             value = bundle.getString(key);
-        } catch (final MissingResourceException e) {
+        } catch (MissingResourceException e) {
             LoggerFactory.getLogger(TranslationProvider.class.getName())
                     .warn("Missing resource", e);
             return "!" + locale.getLanguage() + ": " + key;

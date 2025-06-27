@@ -14,35 +14,43 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment;
 import com.vaadin.flow.component.orderedlayout.FlexComponent.JustifyContentMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.router.PageTitle;
+import com.vaadin.flow.router.HasDynamicTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.RouteAlias;
 import com.vaadin.flow.theme.lumo.LumoUtility.Gap;
-import com.vcp.hessen.kurhessen.data.*;
 import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
 import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
+import com.vcp.hessen.kurhessen.data.User;
+import com.vcp.hessen.kurhessen.data.UserRepository;
 import com.vcp.hessen.kurhessen.features.usermanagement.compoenents.MyselfForm;
 import com.vcp.hessen.kurhessen.views.MainLayout;
-import jakarta.annotation.security.PermitAll;
+import jakarta.annotation.security.RolesAllowed;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.security.access.prepost.PreAuthorize;
 
-@PageTitle("Meine Daten")
-@Route(value = "me", layout = MainLayout.class)
-@RouteAlias(value = "", layout = MainLayout.class)
-@PermitAll
+
+@Route(value = NewMemberView.URL_PATH, layout = MainLayout.class)
+@RolesAllowed("MEMBER_READ")
 @Uses(Icon.class)
-public class MyselfView extends Composite<VerticalLayout> {
+public class NewMemberView extends Composite<VerticalLayout> implements HasDynamicTitle {
+    public static final String URL_PATH = "members/add";
 
     private final AuthenticatedUser authenticatedUser;
     private final UserRepository userRepository;
 
     private final MyselfForm form;
 
-    public MyselfView(AuthenticatedUser authenticatedUser, UserRepository userRepository) {
+    public NewMemberView(AuthenticatedUser authenticatedUser, UserRepository userRepository) {
         this.authenticatedUser = authenticatedUser;
         this.userRepository = userRepository;
 
-        form = new MyselfForm(authenticatedUser.get().get());
+        User u = new User();
+        u.setTribe(authenticatedUser.get().get().getTribe());
+
+
+        form = new MyselfForm(u);
+
+        form.getMemberId().setEnabled(true);
+        form.getPicturesAllowed().setVisible(false);
 
 
         VerticalLayout layoutColumn2 = new VerticalLayout();
@@ -140,6 +148,8 @@ public class MyselfView extends Composite<VerticalLayout> {
     }
 
 
-
-
+    @Override
+    public String getPageTitle() {
+        return new TranslatableText("AddUser").translate();
+    }
 }

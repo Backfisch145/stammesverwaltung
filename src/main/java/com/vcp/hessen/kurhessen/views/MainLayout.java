@@ -19,8 +19,8 @@ import com.vcp.hessen.kurhessen.features.events.EventConfig;
 import com.vcp.hessen.kurhessen.features.inventory.InventoryConfig;
 import com.vcp.hessen.kurhessen.core.views.about.AboutView;
 import com.vcp.hessen.kurhessen.features.inventory.ItemView;
+import com.vcp.hessen.kurhessen.features.usermanagement.views.MemberView;
 import com.vcp.hessen.kurhessen.features.usermanagement.views.MyselfView;
-import com.vcp.hessen.kurhessen.features.usermanagement.views.MitgliederView;
 import com.vcp.hessen.kurhessen.features.events.EventView;
 
 import java.util.Optional;
@@ -87,8 +87,8 @@ public class MainLayout extends AppLayout {
 
         }
 
-        if (accessChecker.hasAccess(MitgliederView.class)) {
-            nav.addItem(new SideNavItem("Mitglieder", MitgliederView.class, LineAwesomeIcon.ADDRESS_CARD.create()));
+        if (accessChecker.hasAccess(MemberView.class)) {
+            nav.addItem(new SideNavItem("Mitglieder", MemberView.class, LineAwesomeIcon.ADDRESS_CARD.create()));
 
         }
         if (eventConfig.isEnabled()) {

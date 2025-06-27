@@ -9,15 +9,24 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.virtuallist.VirtualList;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
+import com.vaadin.flow.data.provider.ListDataProvider;
+import com.vcp.hessen.kurhessen.core.components.DatePickerLocalised;
 import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
+import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
 import com.vcp.hessen.kurhessen.core.util.Callback;
 import com.vcp.hessen.kurhessen.data.Gender;
 import com.vcp.hessen.kurhessen.data.Level;
 import com.vcp.hessen.kurhessen.data.User;
-import com.vcp.hessen.kurhessen.core.components.DatePickerLocalised;
+import com.vcp.hessen.kurhessen.data.UserFile;
+import lombok.extern.slf4j.Slf4j;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
 
+@Slf4j
 public class MemberDetailsForm extends FormLayout {
     private final BeanValidationBinder<User> binder = new BeanValidationBinder<>(User.class);
     private IntegerField membershipId;
@@ -29,6 +38,7 @@ public class MemberDetailsForm extends FormLayout {
     private DatePicker dateOfBirth;
     private DatePicker joinDate;
     private TextField address;
+    private UserFileListComponent userFiles;
     private ComboBox<Gender> gender = new ComboBox<>(new TranslatableText("Gender").translate(), Gender.getEntries());
     private ComboBox<Level> level = new ComboBox<>(new TranslatableText("Level").translate(), Level.getEntries());
     private final Button cancel = new Button(new TranslatableText("Cancel").translate());
@@ -36,9 +46,14 @@ public class MemberDetailsForm extends FormLayout {
     private final Button delete = new Button(new TranslatableText("Delete").translate());
     private final Callback<MemberDetailsFormEvent> actionCallback;
 
-    public MemberDetailsForm(Callback<MemberDetailsFormEvent> onAction) {
+    private final VirtualList<UserFile> fileList = new VirtualList<>();
+    private final ArrayList<File> uploadedFiles = new ArrayList<>();
+    private final AuthenticatedUser authenticatedUser;
+
+    public MemberDetailsForm(AuthenticatedUser authenticatedUser, Callback<MemberDetailsFormEvent> onAction) {
 
         this.actionCallback = onAction;
+        this.authenticatedUser = authenticatedUser;
         membershipId = new IntegerField(new TranslatableText("MembershipNumber").translate());
         username = new TextField(new TranslatableText("Username").translate());
         firstName = new TextField(new TranslatableText("FirstName").translate());
@@ -51,13 +66,38 @@ public class MemberDetailsForm extends FormLayout {
         address = new TextField(new TranslatableText("Address").translate());
         gender.setItemLabelGenerator(Gender::getTitleTranslated);
         level.setItemLabelGenerator(Level::getTitleTranslated);
+        userFiles = new UserFileListComponent(authenticatedUser);
 
         binder.bindInstanceFields(this);
-        this.add(membershipId, username, firstName, lastName, email, phone, dateOfBirth, joinDate, address, gender, level, createButtonLayout());
+
+        this.add(membershipId, username, firstName, lastName, email, phone, dateOfBirth, joinDate, address, gender, level);
+
+        this.add(userFiles, 2);
+
+
+        HorizontalLayout buttons = createButtonLayout();
+        this.add(buttons,  2);
+
+
+
+        userFiles.addValueChangeListener(event -> {
+            if (event.getValue() != null && !event.getValue().isEmpty()) {
+//                validateAndSave();
+            }
+        });
+
     }
 
     public void setUser(User value) {
         binder.setBean(value);
+        userFiles.setTargetUser(value);
+
+        if (value != null) {
+            fileList.setDataProvider(new ListDataProvider<>(value.getUserFiles()));
+        } else {
+            fileList.setDataProvider(new ListDataProvider<>(Collections.emptyList()));
+        }
+
     }
 
 
@@ -71,7 +111,11 @@ public class MemberDetailsForm extends FormLayout {
 
 
         save.addClickListener(click -> validateAndSave());
-        cancel.addClickListener(click -> actionCallback.call(new CancelEvent(this, binder.getBean())));
+        cancel.addClickListener(click -> {
+            //noinspection ResultOfMethodCallIgnored
+            uploadedFiles.forEach(File::delete);
+            actionCallback.call(new CancelEvent(this, binder.getBean()));
+        });
         delete.addClickListener(click -> actionCallback.call(new DeleteEvent(this, binder.getBean())));
 
         binder.addStatusChangeListener(statusChangeEvent -> save.setEnabled(binder.isValid()));

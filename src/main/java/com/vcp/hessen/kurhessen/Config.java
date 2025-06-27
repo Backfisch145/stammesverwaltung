@@ -7,4 +7,5 @@ import org.springframework.context.annotation.Configuration;
 @Configuration("stammesverwaltungProperties")
 public class Config {
 
+
 }

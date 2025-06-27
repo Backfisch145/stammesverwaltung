@@ -1,6 +1,7 @@
 package com.vcp.hessen.kurhessen.core.components;
 
 import com.vaadin.flow.component.upload.UploadI18N;
+import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
 
 import java.util.Arrays;
 
@@ -16,15 +17,15 @@ import java.util.Arrays;
 public class MyUploadI18N extends UploadI18N {
     public MyUploadI18N() {
         setDropFiles(new DropFiles()
-                .setOne("Drop file here")
-                .setMany("Drop files here"));
+                .setOne(new TranslatableText("DropFileHere").translate())
+                .setMany(new TranslatableText("DropFilesHere").translate()));
         setAddFiles(new AddFiles()
-                .setOne("Upload File...")
-                .setMany("Upload Files..."));
+                .setOne(new TranslatableText("UploadFile").translate())
+                .setMany(new TranslatableText("UploadFiles").translate()));
         setError(new Error()
-                .setTooManyFiles("Too Many Files.")
-                .setFileIsTooBig("File is Too Big.")
-                .setIncorrectFileType("Incorrect File Type."));
+                .setTooManyFiles(new TranslatableText("TooManyFiles").translate())
+                .setFileIsTooBig(new TranslatableText("FileTooBig").translate())
+                .setIncorrectFileType(new TranslatableText("WrongFileFormat").translate()));
         setUploading(new Uploading()
                 .setStatus(new Uploading.Status()
                         .setConnecting("Connecting...")

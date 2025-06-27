@@ -55,6 +55,8 @@ public class Item {
     @ToString.Exclude
     private Set<Item> items = new LinkedHashSet<>();
 
+    private Set<String> tags = new LinkedHashSet<>();
+
     public Item(String name, String description, LocalDate createdAt, byte[] picture, Item inside) {
         this.name = name;
         this.description = description;

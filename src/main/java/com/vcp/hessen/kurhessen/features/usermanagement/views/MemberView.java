@@ -2,6 +2,7 @@ package com.vcp.hessen.kurhessen.features.usermanagement.views;
 
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
@@ -10,6 +11,7 @@ import com.vaadin.flow.component.dependency.Uses;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.GridVariant;
 import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.icon.VaadinIcon;
@@ -25,6 +27,7 @@ import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.receivers.FileBuffer;
 import com.vaadin.flow.component.upload.receivers.FileData;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.dom.Style;
 import com.vaadin.flow.function.ValueProvider;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
@@ -34,6 +37,7 @@ import com.vcp.hessen.kurhessen.core.components.MyUploadI18N;
 import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
 import com.vcp.hessen.kurhessen.core.i18n.TranslationHelper;
 import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
+import com.vcp.hessen.kurhessen.core.util.ColorPairGenerator;
 import com.vcp.hessen.kurhessen.data.Gender;
 import com.vcp.hessen.kurhessen.data.Level;
 import com.vcp.hessen.kurhessen.data.User;
@@ -56,21 +60,23 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
 
 @PageTitle("Mitglieder")
 @Route(value = "members", layout = MainLayout.class)
 @RolesAllowed("MEMBER_READ")
 @Uses(Icon.class)
 @Slf4j
-public class MitgliederView extends Div {
+public class MemberView extends Div {
     private final Grid<User> grid;
     private final Filters filters;
     private final MemberDetailsForm form;
     private final UserService userService;
     private final AuthenticatedUser user;
 
-    public MitgliederView(UserService userService, AuthenticatedUser user) {
+    public MemberView(UserService userService, AuthenticatedUser user) {
         this.userService = userService;
         this.user = user;
         setSizeFull();
@@ -78,11 +84,12 @@ public class MitgliederView extends Div {
 
         filters = new Filters(user, this::refreshGrid);
         VerticalLayout layout = new VerticalLayout();
-        layout.add(createImportButton());
+        layout.add(createTopButtons());
         layout.add(createMobileFilters());
         layout.add(filters);
 
         form = new MemberDetailsForm(
+                user,
                 value -> {
                     if (value instanceof MemberDetailsForm.SaveEvent event) {
                         saveUser(event);
@@ -131,6 +138,27 @@ public class MitgliederView extends Div {
             }
         });
         return mobileFilters;
+    }
+
+    private HorizontalLayout createTopButtons() {
+        HorizontalLayout topButtons = new HorizontalLayout();
+        topButtons.setSpacing(true);
+
+        topButtons.add(createImportButton());
+
+        if (user.get().get().hasPermission("MEMBER_INSERT")) {
+            topButtons.add(createAddButton());
+        }
+
+        return topButtons;
+    }
+    private Component createAddButton() {
+        Button button = new Button(new TranslatableText("AddUser").translate(),buttonClickEvent -> {
+            getUI().get().navigate("/" + NewMemberView.URL_PATH);
+        });
+
+
+        return button;
     }
     private Component createImportButton() {
 
@@ -304,6 +332,10 @@ public class MitgliederView extends Div {
                 .setHeader(new TranslatableText("Traits").translate())
                 .setSortable(false)
                 .setAutoWidth(true);
+        grid.addColumn(tagRenderer())
+                .setHeader(new TranslatableText("Tags").translate())
+                .setSortable(false)
+                .setAutoWidth(true);
         grid.addColumn("membershipId")
                 .setHeader(new TranslatableText("MembershipNumberShort").translate())
                 .setAutoWidth(true);
@@ -402,7 +434,16 @@ public class MitgliederView extends Div {
     @NotNull
     private static ValueProvider<User, String> dateOfBirthRenderer() {
         DateTimeFormatter usDateFormatter = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(TranslationHelper.Companion.getCurrentLocale());
-        return user -> user.getDateOfBirth().format(usDateFormatter);
+
+
+        return user -> {
+            LocalDate date = user.getDateOfBirth();
+            if (date != null) {
+                return date.format(usDateFormatter);
+            }
+
+            return new TranslatableText("Unknown").translate();
+        };
     }
     @NotNull
     private static ValueProvider<User, String> dateOfJoinRenderer() {
@@ -431,15 +472,59 @@ public class MitgliederView extends Div {
             vl.add(cameraIcon);
 
             Icon memberIcon = VaadinIcon.CLIPBOARD_USER.create();
-            if (user.getTribe().isSeparateMembership()) {
-                if (user.getTribeMembershipContract() == null) {
-                    memberIcon.getElement().getStyle().set("color", "var(--lumo-error-color)");
-                    memberIcon.setTooltipText(new TranslatableText("NoSeparateMembership").translate());
-                } else {
+            if (user.getTribe().getTribeMembership() != null) {
+                if (user.hasMembershipContract()) {
                     memberIcon.getElement().getStyle().set("color", "var(--lumo-success-color)");
                     memberIcon.setTooltipText(new TranslatableText("HasSeparateMembership").translate());
+                } else {
+                    memberIcon.getElement().getStyle().set("color", "var(--lumo-error-color)");
+                    memberIcon.setTooltipText(new TranslatableText("NoSeparateMembership").translate());
                 }
                 vl.add(memberIcon);
+            }
+
+
+            return vl;
+        });
+    }
+
+    private static HashMap<String, ColorPairGenerator.ColorPair> tagColors = new HashMap<>();
+    private static ColorPairGenerator.ColorPair getTagColor(String tag) {
+        tagColors.putIfAbsent(tag, ColorPairGenerator.generateColorPair());
+        return tagColors.get(tag);
+    }
+
+    @NotNull
+    private static ComponentRenderer<HorizontalLayout, User> tagRenderer() {
+        return new ComponentRenderer<>(user -> {
+            HorizontalLayout vl = new HorizontalLayout();
+            vl.setClassName(LumoUtility.Padding.XSMALL);
+            vl.setSpacing(false);
+            vl.setPadding(false);
+            vl.setWrap(true);
+            vl.setMaxWidth(4, Unit.CM);
+
+            Set<String> tags = user.getTags();
+            if (tags == null || tags.isEmpty()) {
+                return vl;
+            }
+
+            for (String tag : tags) {
+                ColorPairGenerator.ColorPair colorPair = getTagColor(tag);
+                log.info("tagRenderer: tag={}, background={}, text={} ", tag, ColorPairGenerator.toHex(colorPair.background), ColorPairGenerator.toHex(colorPair.text));
+
+                Div div = new Div();
+                div.addClassNames(LumoUtility.Border.ALL, LumoUtility.BorderRadius.LARGE);
+                div.getStyle().setMargin("0.5mm");
+                div.getStyle().set("background", ColorPairGenerator.toHex(colorPair.background));
+                div.getStyle().set("color", ColorPairGenerator.toHex(colorPair.text));
+                Paragraph text = new Paragraph(tag);
+                text.addClassNames(LumoUtility.Margin.NONE);
+                text.getStyle().setFontSize("0.7rem");
+                text.getStyle().set("color", colorPair.text.toString());
+                text.getStyle().setPadding("0.5mm");
+                div.add(text);
+                vl.add(div);
             }
 
 
