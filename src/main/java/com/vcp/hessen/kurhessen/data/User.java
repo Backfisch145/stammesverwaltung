@@ -33,13 +33,14 @@ import java.util.stream.Collectors;
 public class User {
 
     @Id
-    @GeneratedValue()
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private Long id;
 
     @Version
     private int version;
 
-    @Column(unique = true)
+    @Column(unique = true, nullable = true)
+    @Nullable
     private Integer membershipId;
 
     @Column
@@ -92,9 +93,7 @@ public class User {
     @Column(columnDefinition = "false")
     private boolean picturesAllowed = false;
     @Column(columnDefinition = "false")
-    private boolean swimmingInGroupOfThreeAllowed = false;
-    @Column(columnDefinition = "false")
-    private boolean moveFreelyInGroupOfThreeAllowed = false;
+    private boolean canSwim = false;
 
     private LocalDate infoUpdateMailSent = null;
 
@@ -113,15 +112,17 @@ public class User {
     private Tribe tribe;
 
     @ToString.Exclude
-    @OneToMany(mappedBy = "user", orphanRemoval = true, fetch = FetchType.EAGER)
-    private Set<Role> roles = new LinkedHashSet<>();
-
-    @ToString.Exclude
     @OneToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH}, orphanRemoval = true)
     @JoinColumn
     private Set<UserFile> userFiles = new LinkedHashSet<>();
 
     private Set<String> tags =  new LinkedHashSet<>();
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "users_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "roles_name"))
+    private Set<Role> roles = new LinkedHashSet<>();
 
 
     @Nullable

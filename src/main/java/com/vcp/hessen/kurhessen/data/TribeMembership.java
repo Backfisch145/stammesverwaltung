@@ -14,7 +14,7 @@ import java.time.temporal.ChronoUnit;
 @AllArgsConstructor
 @NoArgsConstructor
 public class TribeMembership {
-    @Column(nullable = false)
+    @Column
     @NumberFormat(style = NumberFormat.Style.CURRENCY)
     private double price;
     private int intervall;

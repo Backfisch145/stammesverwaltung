@@ -35,7 +35,6 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 @Slf4j
-@RolesAllowed("MODERATOR")
 public final class EventForm extends FormLayout {
     @NotNull
     private final IntegerField eventId;

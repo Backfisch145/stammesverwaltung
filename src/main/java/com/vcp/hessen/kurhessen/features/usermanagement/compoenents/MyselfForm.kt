@@ -86,7 +86,7 @@ public class MyselfForm(private val user: User) : FormLayout() {
         textField.label = TranslatableText("Tribe").translate()
         textField.width = "400px"
         textField.isReadOnly = true
-        textField.value = user.tribe.name ?: ""
+        textField.value = user.tribe?.name ?: ""
         return textField
     }
 

@@ -27,10 +27,6 @@ public class Role {
     @Enumerated(EnumType.STRING)
     private Set<Permission> permissions =  new HashSet<>();
 
-    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
-    @JoinColumn(name = "user_id")
-    private User user;
-
     public Set<Permission> getPermissions() {
         return permissions;
     }

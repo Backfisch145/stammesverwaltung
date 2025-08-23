@@ -18,6 +18,7 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.FlexLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.function.ValueProvider;
 import com.vaadin.flow.router.PageTitle;
@@ -25,8 +26,10 @@ import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.data.VaadinSpringDataHelpers;
 import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vcp.hessen.kurhessen.core.i18n.TranslationHelper;
+import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
 import com.vcp.hessen.kurhessen.features.events.data.Event;
 import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
+import com.vcp.hessen.kurhessen.features.usermanagement.domain.UserService;
 import com.vcp.hessen.kurhessen.views.MainLayout;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.persistence.criteria.*;
@@ -45,29 +48,54 @@ import org.springframework.security.access.prepost.PreAuthorize;
 
 @PageTitle("Veranstaltungen")
 @Route(value = "events", layout = MainLayout.class)
-@PreAuthorize("has")
-@RolesAllowed("USER")
+@RolesAllowed("EVENT_READ")
 @Uses(Icon.class)
 public class EventView extends Div {
 
     private Grid<Event> grid;
+    private EventForm form;
 
     private Filters filters;
     private final EventService eventService;
+    private final UserService userService;
+    private final AuthenticatedUser authenticatedUser;
 
     private Event selectedEvent = null;
 
-    public EventView(EventService eventService) {
+    public EventView(AuthenticatedUser authenticatedUser, UserService userService, EventService eventService) {
+        this.authenticatedUser = authenticatedUser;
         this.eventService = eventService;
+        this.userService = userService;
         setSizeFull();
         addClassNames("veranstaltungen-view");
 
         filters = new Filters(this::refreshGrid);
+
+        form = new EventForm(userService, value -> {
+            value.setTribe(authenticatedUser.get().get().getTribe());
+            Event e = eventService.update(value);
+
+            form.setEvent(e);
+            form.setMode(EventForm.Mode.SHOW);
+        });
+        form.setVisible(false);
+
         VerticalLayout layout = new VerticalLayout(createMobileFilters(), filters, createGrid());
         layout.setSizeFull();
         layout.setPadding(false);
         layout.setSpacing(false);
-        add(layout);
+
+        Button btn = new Button("Add");
+        btn.addClickListener(event -> {
+            form.setEvent(new Event());
+            form.setVisible(true);
+            form.setMode(EventForm.Mode.CREATE);
+
+        });
+        layout.add(btn);
+
+        SplitLayout sl = new SplitLayout(layout, form);
+        add(sl);
     }
 
     @NotNull
@@ -213,12 +241,14 @@ public class EventView extends Div {
 
         grid.addItemClickListener((ComponentEventListener<ItemClickEvent<Event>>) eventItemClickEvent -> {
             Event clickedEvent = eventItemClickEvent.getItem();
+            form.setEvent(clickedEvent);
+            form.setVisible(true);
 
-            if (selectedEvent == clickedEvent) {
-                getUI().ifPresent(ui -> ui.navigate(String.format(AddEventView.EVENT_ROUTE_TEMPLATE, clickedEvent.getId())));
-            } else {
-                selectedEvent = clickedEvent;
-            }
+//            if (selectedEvent == clickedEvent) {
+//                getUI().ifPresent(ui -> ui.navigate(String.format(AddEventView.EVENT_ROUTE_TEMPLATE, clickedEvent.getId())));
+//            } else {
+//                selectedEvent = clickedEvent;
+//            }
 
 
         });

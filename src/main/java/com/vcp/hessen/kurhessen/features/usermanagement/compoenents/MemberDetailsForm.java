@@ -1,9 +1,12 @@
 package com.vcp.hessen.kurhessen.features.usermanagement.compoenents;
 
 import com.vaadin.flow.component.ComponentEvent;
+import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.combobox.ComboBoxBase;
+import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
@@ -16,6 +19,7 @@ import com.vcp.hessen.kurhessen.core.components.DatePickerLocalised;
 import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
 import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
 import com.vcp.hessen.kurhessen.core.util.Callback;
+import com.vcp.hessen.kurhessen.core.util.converter.SetToListConverter;
 import com.vcp.hessen.kurhessen.data.Gender;
 import com.vcp.hessen.kurhessen.data.Level;
 import com.vcp.hessen.kurhessen.data.User;
@@ -25,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Set;
 
 @Slf4j
 public class MemberDetailsForm extends FormLayout {
@@ -38,6 +43,7 @@ public class MemberDetailsForm extends FormLayout {
     private DatePicker dateOfBirth;
     private DatePicker joinDate;
     private TextField address;
+    private MultiSelectComboBox<String> tags;
     private UserFileListComponent userFiles;
     private ComboBox<Gender> gender = new ComboBox<>(new TranslatableText("Gender").translate(), Gender.getEntries());
     private ComboBox<Level> level = new ComboBox<>(new TranslatableText("Level").translate(), Level.getEntries());
@@ -66,11 +72,23 @@ public class MemberDetailsForm extends FormLayout {
         address = new TextField(new TranslatableText("Address").translate());
         gender.setItemLabelGenerator(Gender::getTitleTranslated);
         level.setItemLabelGenerator(Level::getTitleTranslated);
+        tags = new MultiSelectComboBox<>(new TranslatableText("Tags").translate());
         userFiles = new UserFileListComponent(authenticatedUser);
 
+        tags.setAllowCustomValue(true);
+        tags.addCustomValueSetListener(new ComponentEventListener<ComboBoxBase.CustomValueSetEvent<MultiSelectComboBox<String>>>() {
+            @Override
+            public void onComponentEvent(ComboBoxBase.CustomValueSetEvent<MultiSelectComboBox<String>> event) {
+                log.info("detail: {}", event.getDetail());
+                tags.select(event.getDetail());
+            }
+        });
+
+        binder.forField(tags).withConverter(new SetToListConverter<String>());
+        binder.bind(tags, User::getTags, User::setTags);
         binder.bindInstanceFields(this);
 
-        this.add(membershipId, username, firstName, lastName, email, phone, dateOfBirth, joinDate, address, gender, level);
+        this.add(membershipId, username, firstName, lastName, email, phone, dateOfBirth, joinDate, address, gender, level, tags);
 
         this.add(userFiles, 2);
 
@@ -100,6 +118,9 @@ public class MemberDetailsForm extends FormLayout {
 
     }
 
+    public void setAvailableUserTags(Set<String> availableUserTags) {
+        tags.setItems(availableUserTags);
+    }
 
     private HorizontalLayout createButtonLayout() {
         HorizontalLayout buttonLayout = new HorizontalLayout();

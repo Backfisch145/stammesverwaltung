@@ -2,6 +2,7 @@ package com.vcp.hessen.kurhessen.features.usermanagement.domain.importer;
 
 import com.vcp.hessen.kurhessen.data.*;
 import com.vcp.hessen.kurhessen.features.usermanagement.UsermanagementConfig;
+import kotlin.Pair;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Cell;
@@ -9,6 +10,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.security.core.parameters.P;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +40,7 @@ public class UserImporter {
         this.gruenDateFormat = new SimpleDateFormat(usermanagementConfig.getGruenDateFormat());
     }
 
+    @Transactional
     public String importUsers(File file) {
         StringBuilder errorString = new StringBuilder();
         try {
@@ -54,7 +57,7 @@ public class UserImporter {
             }
 
 
-            HashMap<Tribe, ArrayList<User>> tribeHashMap = new HashMap<>();
+            HashMap<Long, Pair<Tribe, ArrayList<User>>> tribeHashMap = new HashMap<>();
 
             while (iterator.hasNext()) {
 
@@ -170,11 +173,10 @@ public class UserImporter {
                     log.debug("Row " + correctedRow + " could not be processed!", e);
                 }
 
-                Tribe t = null;
 
                 try {
                     if (!tribeHashMap.containsKey(stammesId)) {
-                        t = repositoryTribe.findById(stammesId).orElse(null);
+                        Tribe t = repositoryTribe.findById(stammesId).orElse(null);
 
                         if (t == null) {
                             String tribeName = stammCell.getStringCellValue();
@@ -187,7 +189,7 @@ public class UserImporter {
                             log.info("importGruenFile: Ein noch nicht vorkommender Stamm wurde durch den import hinzugefügt! " + t);
                         }
 
-                        tribeHashMap.put(t, new ArrayList<>());
+                        tribeHashMap.put(stammesId, new Pair<>(t, new ArrayList<>()));
                     }
                 } catch (Exception e) {
                     log.warn("Row " + correctedRow + " could not find matching Tribe", e);
@@ -209,19 +211,19 @@ public class UserImporter {
                         null,
                         gender
                 );
-                newUser.setTribe(t);
+                newUser.setTribe(tribeHashMap.get(stammesId).getFirst());
 
                 log.debug("importGruenFile: User [" + newUser.getUsername() + "] was red from row " + correctedRow);
 
                 if (newUser.getMembershipId() == null) {
-                    tribeHashMap.get(t).add(newUser);
+                    tribeHashMap.get(stammesId).getSecond().add(newUser);
                     continue;
                 }
 
                 Optional<User> optionalUser = userRepository.findByMembershipId(newUser.getMembershipId());
                 if (optionalUser.isEmpty()) {
                     log.info("importGruenFile: User [" + newUser.getUsername() + "] will be added to the Database");
-                    tribeHashMap.get(t).add(newUser);
+                    tribeHashMap.get(stammesId).getSecond().add(newUser);
                 } else {
                     log.info("importGruenFile: User [" + newUser.getUsername() + "] is already in the Database");
                     User u = optionalUser.get();
@@ -229,15 +231,11 @@ public class UserImporter {
                 }
             }
 
-            for (Tribe tribe : tribeHashMap.keySet()) {
-                userRepository.saveAll(tribeHashMap.get(tribe));
-//                for (User user1 : tribeHashMap.get(tribe)) {
-//                    user1.setTribe(tribe);
-//                    User u = userRepository.save(user1);
-////                    u.setTribe(tribe);
-////                    userRepository.save(u);
-//                }
-            }
+            tribeHashMap.forEach((aLong, tribeArrayListPair) -> {
+                userRepository.saveAll(tribeArrayListPair.getSecond());
+            });
+
+
         } catch (FileNotFoundException e) {
             log.error("The uploaded File could not be found!", e);
             errorString.append("The uploaded File could not be found!");

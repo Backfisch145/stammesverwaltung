@@ -1,6 +1,7 @@
 package com.vcp.hessen.kurhessen.features.events.data;
 
 import com.vcp.hessen.kurhessen.core.security.Role;
+import com.vcp.hessen.kurhessen.data.Tribe;
 import com.vcp.hessen.kurhessen.data.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -48,9 +49,12 @@ public class Event {
     private int participantCount;
 
 
-
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL)
     private Set<EventParticipant> participants = new LinkedHashSet<>();
+
+    @ManyToOne(optional = false)
+    @JoinColumn(nullable = false)
+    private Tribe tribe;
 
     public boolean isUserParticipant(User user) {
         return this.getParticipants().stream()

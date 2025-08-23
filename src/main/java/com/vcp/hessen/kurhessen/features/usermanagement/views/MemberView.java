@@ -40,6 +40,7 @@ import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
 import com.vcp.hessen.kurhessen.core.util.ColorPairGenerator;
 import com.vcp.hessen.kurhessen.data.Gender;
 import com.vcp.hessen.kurhessen.data.Level;
+import com.vcp.hessen.kurhessen.data.TribeService;
 import com.vcp.hessen.kurhessen.data.User;
 import com.vcp.hessen.kurhessen.features.usermanagement.compoenents.MemberDetailsForm;
 import com.vcp.hessen.kurhessen.features.usermanagement.domain.UserService;
@@ -74,15 +75,17 @@ public class MemberView extends Div {
     private final Filters filters;
     private final MemberDetailsForm form;
     private final UserService userService;
+    private final TribeService tribeService;
     private final AuthenticatedUser user;
 
-    public MemberView(UserService userService, AuthenticatedUser user) {
+    public MemberView(UserService userService, AuthenticatedUser user, TribeService tribeService) {
+        this.tribeService = tribeService;
         this.userService = userService;
         this.user = user;
         setSizeFull();
         addClassNames("mitglieder-view");
 
-        filters = new Filters(user, this::refreshGrid);
+        filters = new Filters(user, tribeService, this::refreshGrid);
         VerticalLayout layout = new VerticalLayout();
         layout.add(createTopButtons());
         layout.add(createMobileFilters());
@@ -102,6 +105,7 @@ public class MemberView extends Div {
                     }
                 }
         );
+        form.setAvailableUserTags(tribeService.getUserTags());
 
         grid = createGrid();
 
@@ -221,12 +225,12 @@ public class MemberView extends Div {
         private final AuthenticatedUser user;
         private final TextField membershipId = new TextField(new TranslatableText("MembershipNumber").translate());
         private final TextField name = new TextField(new TranslatableText("Name").translate());
-//        private final TextField phone = new TextField(new TranslatableText("Phone").translate());
         private final DatePicker startDate = new DatePicker(new TranslatableText("Birthday").translate());
         private final DatePicker endDate = new DatePicker();
         private final MultiSelectComboBox<String> levels = new MultiSelectComboBox<>(new TranslatableText("Level").translate());
+        private final MultiSelectComboBox<String> tags = new MultiSelectComboBox<>(new TranslatableText("Tags").translate());
 
-        public Filters(AuthenticatedUser user, Runnable onSearch) {
+        public Filters(AuthenticatedUser user, TribeService tribeService, Runnable onSearch) {
             this.user = user;
 
             setWidthFull();
@@ -240,6 +244,8 @@ public class MemberView extends Div {
             );
             levels.setItemLabelGenerator(l -> new TranslatableText(l).translate());
 
+//            tags.setItems(tribeService.getUserTags());
+
             // Action buttons
             Button resetBtn = new Button(new TranslatableText("Reset").translate());
             resetBtn.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
@@ -249,6 +255,7 @@ public class MemberView extends Div {
                 startDate.clear();
                 endDate.clear();
                 levels.clear();
+                tags.clear();
                 onSearch.run();
             });
             Button searchBtn = new Button(new TranslatableText("Search").translate());
@@ -264,6 +271,7 @@ public class MemberView extends Div {
                     name,
                     createDateRangeFilter(),
                     levels,
+//                    tags,
                     actions
             );
         }
@@ -319,6 +327,15 @@ public class MemberView extends Div {
                             .add(criteriaBuilder.equal(criteriaBuilder.literal(level), root.get(databaseColumn)));
                 }
                 predicates.add(criteriaBuilder.or(levelPredicates.toArray(Predicate[]::new)));
+            }
+            if (!tags.isEmpty()) {
+                String databaseColumn = "tags";
+                List<Predicate> predicates2 = new ArrayList<>();
+                for (String tags : levels.getValue()) {
+                    predicates2
+                            .add(criteriaBuilder.like(criteriaBuilder.literal("%" + tags + "%"), root.get(databaseColumn)));
+                }
+                predicates.add(criteriaBuilder.or(predicates2.toArray(Predicate[]::new)));
             }
 
             return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
@@ -541,6 +558,7 @@ public class MemberView extends Div {
 
     private void refreshGrid() {
         grid.getDataProvider().refreshAll();
+        form.setAvailableUserTags(tribeService.getUserTags());
     }
 
     private void saveUser(MemberDetailsForm.SaveEvent event) {

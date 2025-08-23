@@ -38,6 +38,7 @@ class ScheduledTasks(
         val f = ResourceUtils.getFile("classpath:features/usermanagement/CheckInformationEmail.html")
         val html = Files.readString(f.toPath(), StandardCharsets.UTF_8)
 
+        log.warn("sendMailForInformationUpdates: DEAKTIVATED")
         return
 
         for (user in userRepository.findAll()) {
