@@ -144,6 +144,14 @@
             <optional>true</optional>
         </dependency>
 
+
+
+        <dependency>
+            <groupId>org.vaadin.addons.tatu</groupId>
+            <artifactId>colorpicker</artifactId>
+            <version>1.4.2</version>
+        </dependency>
+
     </dependencies>
 
     <build>

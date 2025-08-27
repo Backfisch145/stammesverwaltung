@@ -38,10 +38,7 @@ import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
 import com.vcp.hessen.kurhessen.core.i18n.TranslationHelper;
 import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
 import com.vcp.hessen.kurhessen.core.util.ColorPairGenerator;
-import com.vcp.hessen.kurhessen.data.Gender;
-import com.vcp.hessen.kurhessen.data.Level;
-import com.vcp.hessen.kurhessen.data.TribeService;
-import com.vcp.hessen.kurhessen.data.User;
+import com.vcp.hessen.kurhessen.data.*;
 import com.vcp.hessen.kurhessen.features.usermanagement.compoenents.MemberDetailsForm;
 import com.vcp.hessen.kurhessen.features.usermanagement.domain.UserService;
 import com.vcp.hessen.kurhessen.views.MainLayout;
@@ -51,10 +48,13 @@ import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.Hibernate;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.awt.*;
 import java.io.File;
 import java.io.InputStream;
 import java.time.LocalDate;
@@ -93,6 +93,7 @@ public class MemberView extends Div {
 
         form = new MemberDetailsForm(
                 user,
+                tribeService,
                 value -> {
                     if (value instanceof MemberDetailsForm.SaveEvent event) {
                         saveUser(event);
@@ -520,22 +521,26 @@ public class MemberView extends Div {
             vl.setPadding(false);
             vl.setWrap(true);
             vl.setMaxWidth(4, Unit.CM);
-
-            Set<String> tags = user.getTags();
+            Hibernate.initialize(user.getTags());
+            Set<UserTag> tags = user.getTags();
             if (tags == null || tags.isEmpty()) {
                 return vl;
             }
 
-            for (String tag : tags) {
-                ColorPairGenerator.ColorPair colorPair = getTagColor(tag);
-                log.info("tagRenderer: tag={}, background={}, text={} ", tag, ColorPairGenerator.toHex(colorPair.background), ColorPairGenerator.toHex(colorPair.text));
+            for (UserTag tag : tags) {
+                ColorPairGenerator.ColorPair colorPair = new ColorPairGenerator.ColorPair(
+                        tag.getColor(), null);
+                log.info("tagRenderer: tag={}, background={}, text={} ", tag, colorPair.background, colorPair.text);
 
-                Div div = new Div();
+                HorizontalLayout div = new HorizontalLayout();
                 div.addClassNames(LumoUtility.Border.ALL, LumoUtility.BorderRadius.LARGE);
                 div.getStyle().setMargin("0.5mm");
                 div.getStyle().set("background", ColorPairGenerator.toHex(colorPair.background));
                 div.getStyle().set("color", ColorPairGenerator.toHex(colorPair.text));
-                Paragraph text = new Paragraph(tag);
+
+                div.add(new Icon(tag.getIcon()));
+
+                Paragraph text = new Paragraph(tag.getName());
                 text.addClassNames(LumoUtility.Margin.NONE);
                 text.getStyle().setFontSize("0.7rem");
                 text.getStyle().set("color", colorPair.text.toString());
@@ -561,7 +566,8 @@ public class MemberView extends Div {
         form.setAvailableUserTags(tribeService.getUserTags());
     }
 
-    private void saveUser(MemberDetailsForm.SaveEvent event) {
+    @Transactional
+    protected void saveUser(MemberDetailsForm.SaveEvent event) {
         log.info("saveUser: user = " + event.getUser().getUsername());
         userService.update(event.getUser());
         refreshGrid();

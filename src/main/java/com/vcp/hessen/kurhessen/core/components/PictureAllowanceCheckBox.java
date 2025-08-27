@@ -1,20 +1,25 @@
 package com.vcp.hessen.kurhessen.core.components;
 
-import com.vaadin.flow.component.Html;
-import com.vaadin.flow.component.Text;
+import com.vaadin.flow.component.HasValue;
 import com.vaadin.flow.component.checkbox.Checkbox;
+import com.vaadin.flow.component.customfield.CustomField;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.data.binder.BeanValidationBinder;
+import com.vaadin.flow.data.binder.HasValidator;
+import com.vaadin.flow.data.binder.ValidationResult;
+import com.vaadin.flow.data.binder.Validator;
 import com.vaadin.flow.dom.Style;
+import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
+import com.vcp.hessen.kurhessen.data.User;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class PictureAllowanceCheckBox extends VerticalLayout {
-    private static final boolean DEFAULT_STATE = false;
+public class PictureAllowanceCheckBox extends CustomField<Boolean> implements HasValidator<Boolean> {
 
-    private final Checkbox checkbox;
+    private final Checkbox picturesAllowed = new Checkbox(new TranslatableText("Consent").translate());
 
     public PictureAllowanceCheckBox() {
 
@@ -22,29 +27,34 @@ public class PictureAllowanceCheckBox extends VerticalLayout {
         add(h2);
         String asd = new TranslatableText("PictureAllowanceDescription").translate();
         Paragraph paragraph = new Paragraph(asd);
+        paragraph.addClassName(LumoUtility.LineHeight.SMALL);
         paragraph.getStyle().setWhiteSpace(Style.WhiteSpace.PRE_LINE);
         add(paragraph);
-
-        checkbox = new Checkbox();
-        checkbox.setLabel(new TranslatableText("Consent").translate());
-        checkbox.setValue(DEFAULT_STATE);
-        add(checkbox);
+        add(picturesAllowed);
     }
 
-    public void setValue(Boolean state) {
-        if (state == null) {
-            state = DEFAULT_STATE;
-        }
-
-        checkbox.setValue(state);
+    @Override
+    protected Boolean generateModelValue() {
+        return picturesAllowed.getValue();
     }
 
-    public boolean getValue() {
-        return checkbox.getValue();
+    @Override
+    protected void setPresentationValue(Boolean aBoolean) {
+        picturesAllowed.setValue(aBoolean);
     }
 
-    public boolean isInvalid() {
-        return false;
+    boolean validate(Boolean value) {
+        return true;
     }
 
+    @Override
+    public Validator<Boolean> getDefaultValidator() {
+        return (value, context) -> {
+            if (validate(value)) {
+                return ValidationResult.ok();
+            } else {
+                return ValidationResult.error("");
+            }
+        };
+    }
 }

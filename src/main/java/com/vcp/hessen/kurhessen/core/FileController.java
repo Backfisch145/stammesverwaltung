@@ -1,14 +1,13 @@
 package com.vcp.hessen.kurhessen.core;
 
 
-import com.vaadin.flow.router.NotFoundException;
 import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
+import com.vcp.hessen.kurhessen.core.security.Role;
+import com.vcp.hessen.kurhessen.data.User;
 import com.vcp.hessen.kurhessen.data.UserFile;
 import com.vcp.hessen.kurhessen.data.UserFileRepository;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.NotImplementedException;
-import org.jsoup.HttpStatusException;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -38,9 +37,19 @@ public class FileController {
     public ResponseEntity<ByteArrayResource> getFile(@PathVariable long id) throws IOException {
         UserFile file = userFileRepository.findById(id).orElseThrow(()-> new HttpClientErrorException(HttpStatus.NOT_FOUND));
 
-//        if (true) {
-//            throw new HttpClientErrorException(HttpStatus.NOT_FOUND, "Not Yet Implemented");
-//        }
+        User user = authenticatedUser.get().orElseThrow(()-> new HttpClientErrorException(HttpStatus.UNAUTHORIZED));
+
+        if (!user.hasPermission(Role.SUPERADMIN_ROLE)) {
+
+            if (file.getUser().getTribe() != user.getTribe()) {
+                throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED);
+            }
+
+            if (!file.getUser().equals(user) && !user.hasPermission("MEMBER_READ")) {
+                throw new HttpClientErrorException(HttpStatus.UNAUTHORIZED);
+            }
+        }
+
 
         File f =  new File(file.getPath());
         String extension = FilenameUtils.getExtension(f.getName()).toLowerCase();

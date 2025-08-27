@@ -1,5 +1,6 @@
 package com.vcp.hessen.kurhessen.core.util;
 
+import javax.annotation.Nullable;
 import java.awt.*;
 import java.util.Random;
 
@@ -9,7 +10,26 @@ public class ColorPairGenerator {
         public final Color background;
         public final Color text;
 
-        public ColorPair(Color background, Color text) {
+        public ColorPair(@Nullable Color background, @Nullable Color text) {
+
+            if (background == null && text == null) {
+                this.background = randomColor();
+                this.text = getReadableColor(this.background);
+                return;
+            }
+            if (background == null) {
+                this.text = text;
+                this.background = getReadableColor(text);
+                return;
+            }
+            if (text == null) {
+                this.background = background;
+                this.text = getReadableColor(background);
+                return;
+            }
+
+
+
             this.background = background;
             this.text = text;
         }
@@ -22,7 +42,7 @@ public class ColorPairGenerator {
 
     public static ColorPair generateColorPair() {
         Color baseColor = randomColor();
-        Color textColor = getReadableTextColor(baseColor);
+        Color textColor = getReadableColor(baseColor);
         return new ColorPair(baseColor, textColor);
     }
 
@@ -44,11 +64,11 @@ public class ColorPairGenerator {
         return 0.2126 * r + 0.7152 * g + 0.0722 * b;
     }
 
-    private static Color getReadableTextColor(Color background) {
+    public static Color getReadableColor(Color otherColor) {
         Color white = Color.WHITE;
         Color black = Color.BLACK;
 
-        double lumBg = luminance(background);
+        double lumBg = luminance(otherColor);
         double lumWhite = luminance(white);
         double lumBlack = luminance(black);
 

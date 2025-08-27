@@ -97,15 +97,16 @@ public class User {
 
     private LocalDate infoUpdateMailSent = null;
 
+    @Enumerated(EnumType.STRING)
+    private Diet diet = Diet.UNKNOWN;
 
     @OneToMany(mappedBy = "user")
     @ToString.Exclude
     private Set<EventParticipant> participants;
 
     @ToString.Exclude
-    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "user_emergency_contact_id")
-    private UserEmergencyContact userEmergencyContact;
+    @OneToMany(mappedBy = "user", orphanRemoval = true)
+    private Set<UserEmergencyContact> emergencyContacts = new HashSet<>();
 
     @ManyToOne(cascade = {CascadeType.DETACH, CascadeType.PERSIST, CascadeType.REFRESH, CascadeType.MERGE})
     @JoinColumn
@@ -116,7 +117,7 @@ public class User {
     @JoinColumn
     private Set<UserFile> userFiles = new LinkedHashSet<>();
 
-    private Set<String> tags =  new LinkedHashSet<>();
+
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "users_roles",
@@ -124,15 +125,14 @@ public class User {
             inverseJoinColumns = @JoinColumn(name = "roles_name"))
     private Set<Role> roles = new LinkedHashSet<>();
 
-
-    @Nullable
-    public UserEmergencyContact getUserEmergencyContact() {
-        return userEmergencyContact;
-    }
-
-    public void setUserEmergencyContact(UserEmergencyContact userEmergencyContact) {
-        this.userEmergencyContact = userEmergencyContact;
-    }
+    @ToString.Exclude
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "users_to_tags",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "userTags_id")
+    )
+    private Set<UserTag> tags = new LinkedHashSet<>();
 
     public String getDisplayName() {
        return firstName + " " + lastName;
@@ -251,7 +251,17 @@ public class User {
             }
         }
 
+        if (this.getTribe().getId() == 1) {
+            permissions.add("ROLE_SUPERADMIN");
+        }
+
+
         return permissions.stream().map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
+    }
+
+
+    public boolean isSuperadmin() {
+        return hasPermission("ROLE_SUPERADMIN");
     }
 }

@@ -12,6 +12,6 @@ import java.util.Set;
 @Repository
 public interface TribeRepository extends JpaRepository<Tribe, Long>, JpaSpecificationExecutor<User> {
 
-    @Query("SELECT u.tags FROM User u where u.tribe = :tribe")
-    public Set<Set<String>> getAllUserTags(Tribe tribe);
+    @Query("SELECT t.userTags FROM Tribe t where t = :tribe")
+    public Set<UserTag> getAllUserTags(Tribe tribe);
 }

@@ -4,6 +4,7 @@ import com.vaadin.flow.component.applayout.AppLayout;
 import com.vaadin.flow.component.applayout.DrawerToggle;
 import com.vaadin.flow.component.avatar.Avatar;
 import com.vaadin.flow.component.contextmenu.MenuItem;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.*;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.menubar.MenuBar;
@@ -13,6 +14,8 @@ import com.vaadin.flow.component.sidenav.SideNavItem;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.server.auth.AccessAnnotationChecker;
 import com.vaadin.flow.theme.lumo.LumoUtility;
+import com.vcp.hessen.kurhessen.core.components.ChangePasswordDialog;
+import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
 import com.vcp.hessen.kurhessen.data.User;
 import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
 import com.vcp.hessen.kurhessen.features.events.EventConfig;
@@ -133,10 +136,6 @@ public class MainLayout extends AppLayout {
 
 
             avatar.setImage(getGravatarUrl(user.getEmail()));
-
-//             StreamResource resource = new StreamResource("profile-pic",
-//                    () -> new ByteArrayInputStream(user.getProfilePicture()));
-//            avatar.setImageResource(resource);
             avatar.setThemeName("xsmall");
             avatar.getElement().setAttribute("tabindex", "-1");
 
@@ -152,7 +151,10 @@ public class MainLayout extends AppLayout {
             div.getElement().getStyle().set("align-items", "center");
             div.getElement().getStyle().set("gap", "var(--lumo-space-s)");
             userName.add(div);
-            userName.getSubMenu().addItem("Sign out", e -> authenticatedUser.logout());
+            userName.getSubMenu().addItem(new TranslatableText("Logout").translate(), e -> authenticatedUser.logout());
+            userName.getSubMenu().addItem(new TranslatableText("ChangePassword").translate(), e -> {
+                new ChangePasswordDialog(authenticatedUser).open();
+            });
 
             layout.add(userMenu);
         } else {

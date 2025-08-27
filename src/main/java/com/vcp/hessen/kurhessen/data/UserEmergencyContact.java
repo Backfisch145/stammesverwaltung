@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
 @Entity
+@Table(name = "user_emergency_contact")
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserEmergencyContact {
@@ -19,6 +20,18 @@ public class UserEmergencyContact {
 
     String phone;
     String email;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
 
     public Long getId() {
         return id;

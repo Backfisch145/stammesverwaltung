@@ -17,6 +17,7 @@ import java.util.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class Role {
+    public static final String SUPERADMIN_ROLE = "ROLE_SUPERADMIN";
 
     @Id
     private String name;

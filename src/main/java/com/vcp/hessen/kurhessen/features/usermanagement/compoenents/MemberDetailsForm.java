@@ -9,27 +9,35 @@ import com.vaadin.flow.component.combobox.ComboBoxBase;
 import com.vaadin.flow.component.combobox.MultiSelectComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.html.Div;
+import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.icon.Icon;
+import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.IntegerField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.virtuallist.VirtualList;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
+import com.vaadin.flow.data.provider.CallbackDataProvider;
 import com.vaadin.flow.data.provider.ListDataProvider;
+import com.vaadin.flow.data.provider.Query;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
+import com.vaadin.flow.theme.lumo.LumoUtility;
 import com.vcp.hessen.kurhessen.core.components.DatePickerLocalised;
 import com.vcp.hessen.kurhessen.core.i18n.TranslatableText;
 import com.vcp.hessen.kurhessen.core.security.AuthenticatedUser;
 import com.vcp.hessen.kurhessen.core.util.Callback;
+import com.vcp.hessen.kurhessen.core.util.ColorPairGenerator;
 import com.vcp.hessen.kurhessen.core.util.converter.SetToListConverter;
-import com.vcp.hessen.kurhessen.data.Gender;
-import com.vcp.hessen.kurhessen.data.Level;
-import com.vcp.hessen.kurhessen.data.User;
-import com.vcp.hessen.kurhessen.data.UserFile;
+import com.vcp.hessen.kurhessen.data.*;
 import lombok.extern.slf4j.Slf4j;
 
+import java.awt.*;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Set;
+import java.util.stream.Stream;
 
 @Slf4j
 public class MemberDetailsForm extends FormLayout {
@@ -43,7 +51,7 @@ public class MemberDetailsForm extends FormLayout {
     private DatePicker dateOfBirth;
     private DatePicker joinDate;
     private TextField address;
-    private MultiSelectComboBox<String> tags;
+    private MultiSelectComboBox<UserTag> tags;
     private UserFileListComponent userFiles;
     private ComboBox<Gender> gender = new ComboBox<>(new TranslatableText("Gender").translate(), Gender.getEntries());
     private ComboBox<Level> level = new ComboBox<>(new TranslatableText("Level").translate(), Level.getEntries());
@@ -56,7 +64,7 @@ public class MemberDetailsForm extends FormLayout {
     private final ArrayList<File> uploadedFiles = new ArrayList<>();
     private final AuthenticatedUser authenticatedUser;
 
-    public MemberDetailsForm(AuthenticatedUser authenticatedUser, Callback<MemberDetailsFormEvent> onAction) {
+    public MemberDetailsForm(AuthenticatedUser authenticatedUser, TribeService tribeService,Callback<MemberDetailsFormEvent> onAction) {
 
         this.actionCallback = onAction;
         this.authenticatedUser = authenticatedUser;
@@ -72,19 +80,46 @@ public class MemberDetailsForm extends FormLayout {
         address = new TextField(new TranslatableText("Address").translate());
         gender.setItemLabelGenerator(Gender::getTitleTranslated);
         level.setItemLabelGenerator(Level::getTitleTranslated);
-        tags = new MultiSelectComboBox<>(new TranslatableText("Tags").translate());
         userFiles = new UserFileListComponent(authenticatedUser);
 
+        tags = new MultiSelectComboBox<>(new TranslatableText("Tags").translate());
         tags.setAllowCustomValue(true);
-        tags.addCustomValueSetListener(new ComponentEventListener<ComboBoxBase.CustomValueSetEvent<MultiSelectComboBox<String>>>() {
-            @Override
-            public void onComponentEvent(ComboBoxBase.CustomValueSetEvent<MultiSelectComboBox<String>> event) {
-                log.info("detail: {}", event.getDetail());
-                tags.select(event.getDetail());
-            }
+        tags.setRenderer(new ComponentRenderer<>(userTag -> {
+            HorizontalLayout layout = new HorizontalLayout();
+            layout.setPadding(false);
+//            layout.setSpacing(false);
+//            layout.setJustifyContentMode(FlexComponent.JustifyContentMode.CENTER);
+            layout.setAlignItems(FlexComponent.Alignment.CENTER);
+            layout.addClassName(LumoUtility.Padding.SMALL);
+            layout.addClassName(LumoUtility.BorderRadius.SMALL);
+
+            Color tagColor =  userTag.getColor();
+            log.info("tagColor=" +  tagColor);
+            Color textColor = ColorPairGenerator.getReadableColor(tagColor);
+            log.info("textColor=" +  textColor);
+
+            layout.getStyle().set("background", ColorPairGenerator.toHex(tagColor));
+            layout.getStyle().set("color", ColorPairGenerator.toHex(textColor));
+            Icon icon = new Icon(userTag.getIcon());
+
+            Paragraph paragraph = new Paragraph();
+            paragraph.setText(userTag.getName());
+
+            layout.add(icon, paragraph);
+            return layout;
+        }));
+        tags.setItems((CallbackDataProvider.FetchCallback<UserTag, String>) query -> tribeService.getUserTags().stream());
+        tags.addCustomValueSetListener((ComponentEventListener<ComboBoxBase.CustomValueSetEvent<MultiSelectComboBox<UserTag>>>) event -> {
+            log.info("detail: {}", event.getDetail());
+
+            UserTag userTag = new  UserTag();
+            userTag.setName(event.getDetail());
+            userTag = tribeService.addUserTag(userTag);
+            tags.getDataProvider().refreshAll();
+            tags.select(userTag);
         });
 
-        binder.forField(tags).withConverter(new SetToListConverter<String>());
+        binder.forField(tags).withConverter(new SetToListConverter<>());
         binder.bind(tags, User::getTags, User::setTags);
         binder.bindInstanceFields(this);
 
@@ -118,7 +153,7 @@ public class MemberDetailsForm extends FormLayout {
 
     }
 
-    public void setAvailableUserTags(Set<String> availableUserTags) {
+    public void setAvailableUserTags(Set<UserTag> availableUserTags) {
         tags.setItems(availableUserTags);
     }
 

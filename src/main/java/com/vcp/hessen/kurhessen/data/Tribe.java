@@ -4,13 +4,10 @@ import com.vcp.hessen.kurhessen.features.events.data.Event;
 import com.vcp.hessen.kurhessen.features.inventory.data.Item;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.Hibernate;
-import org.hibernate.proxy.HibernateProxy;
 
 import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -35,6 +32,10 @@ public class Tribe {
     @ToString.Exclude
     @OneToMany(mappedBy = "tribe", orphanRemoval = true)
     Set<User> users = new HashSet<>();
+
+    @ToString.Exclude
+    @OneToMany(mappedBy = "tribe", orphanRemoval = true)
+    private Set<UserTag> userTags = new LinkedHashSet<>();
 
     @ToString.Exclude
     @OneToMany(mappedBy = "tribe", cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH}, orphanRemoval = true)

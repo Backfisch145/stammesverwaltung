@@ -35,7 +35,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     }
 
     private static List<GrantedAuthority> getAuthorities(User user) {
-
         return user.getAuthorities();
     }
 
